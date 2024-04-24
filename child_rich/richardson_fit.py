@@ -94,8 +94,10 @@ def plot_richardson_result(result, log=False):
                      yerr=data.delta_j_g, label='data', linestyle='None', marker='.')
         plt.title("$J_g=A_gT^2exp(\\frac{W}{k_B T})$")
 
+    fit_label = f'a = {result[0, 0]:.2f}, b = {result[0, 1]:.2f}'
+
     # plt.plot(x, y_theo, label='model')
-    plt.plot(x, y_fit, label='fit')
+    plt.plot(x, y_fit, label=fit_label)
     plt.legend()
     plt.grid()
 

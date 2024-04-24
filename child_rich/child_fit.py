@@ -43,33 +43,35 @@ def child_fit(V_cutoff=13, temp=1, lin=True, use_odr=True):
         bg_a = np.log(4 * cst.eps_0 * np.sqrt(2 * cst.e_charge /
                       cst.e_mass) / (9 * (data.grid_radius**2)))
         if use_odr:
-            output = odr_child_fitter(log_v, log_j, delta_log_v, delta_log_j, bg_a)
+            output = odr_child_fitter(
+                log_v, log_j, delta_log_v, delta_log_j, bg_a)
             print_child_result(output, lin)
-            plot_child_result(output, log_v, log_j, delta_log_v,
-                            delta_log_j, temp=temp)
+            plot_child_result(V_cutoff, output, log_v, log_j, delta_log_v,
+                              delta_log_j, temp=temp)
         else:
             output = curve_fit_child_fitter(log_v, log_j, delta_log_j, bg_a)
             print_child_result(output, lin)
-            plot_child_result(output, log_v, log_j,
-                            delta_y=delta_log_j, temp=temp)
+            plot_child_result(V_cutoff, output, log_v, log_j,
+                              delta_y=delta_log_j, temp=temp)
     else:  # lin = False
         # best guess for constant term in linear fit
         bg_a = np.log(4 * cst.eps_0 * np.sqrt(2 * cst.e_charge /
                       cst.e_mass) / (9 * (data.grid_radius**2)))
         if use_odr:
             output = odr_child_fitter(volts, curr_dens, delta_volts,
-                                delta_curr_dens, bg_a, False)
-            print_child_result(output, lin)
-            plot_child_result(output, volts, curr_dens, delta_volts,
-                            delta_curr_dens, False, temp=temp)
-        else:
-            output = curve_fit_child_fitter(volts, curr_dens,
                                       delta_curr_dens, bg_a, False)
             print_child_result(output, lin)
-            plot_child_result(output, volts, curr_dens,
-                            delta_y=delta_curr_dens, linear_fit=False, temp=temp)
+            plot_child_result(V_cutoff, output, volts, curr_dens, delta_volts,
+                              delta_curr_dens, False, temp=temp)
+        else:
+            output = curve_fit_child_fitter(volts, curr_dens,
+                                            delta_curr_dens, bg_a, False)
+            print_child_result(output, lin)
+            plot_child_result(V_cutoff, output, volts, curr_dens,
+                              delta_y=delta_curr_dens, linear_fit=False, temp=temp)
 
     return output
+
 
 def print_child_result(output, linear_fit):
     '''Prints results from the fit'''
@@ -98,7 +100,7 @@ def print_child_result(output, linear_fit):
     print("ratio:", ctm_ratio / ctm_theo, '\n')
 
 
-def plot_child_result(output, x_data, y_data, delta_x=None, delta_y=None, linear_fit=True, temp=1):
+def plot_child_result(v, output, x_data, y_data, delta_x=None, delta_y=None, linear_fit=True, temp=1):
     '''Plots results from the fit and saves a .png file'''
     x = np.linspace(min(x_data), max(x_data), 100)
     plt.figure(dpi=200)
@@ -108,7 +110,7 @@ def plot_child_result(output, x_data, y_data, delta_x=None, delta_y=None, linear
         y_fit = output[0, 0] + x * output[0, 1]
         plt.xlabel('log($V_g$)')
         plt.ylabel('log($J_g$)')
-        filename = "plot_T" + str(temp) + "_linear.png"
+        filename = "plot_T" + str(temp) + "_linear_" + str(v) + ".png"
     else:
         y_theo = 4 * cst.eps_0 * \
             np.sqrt(2 * cst.e_charge / cst.e_mass) / \
@@ -116,14 +118,16 @@ def plot_child_result(output, x_data, y_data, delta_x=None, delta_y=None, linear
         y_fit = output[0, 0]*(x**output[0, 1])
         plt.xlabel('Grid Voltage $V_g$ [V]')
         plt.ylabel('Grid Density Current $J_g$ [A/m$^2$]')
-        filename = "plot_T" + str(temp) + "_power.png"
+        filename = "plot_T" + str(temp) + "_power_" + v + ".png"
+
+    fit_label = f'a = {output[0, 0]:.2f}, b = {output[0, 1]:.2f}'
 
     plt.plot(x, y_theo, label='model')
-    plt.plot(x, y_fit, label='fit')
+    plt.plot(x, y_fit, label=fit_label)
     plt.errorbar(x_data, y_data, xerr=delta_x, yerr=delta_y, label='data',
                  linestyle='None', marker='.')
     plt.title(
-        '(T$\simeq$' + str(np.ceil(data.T[temp-1]))+' $\pm$ ' + str(np.ceil(data.delta_T[temp-1]))+'Celsius)')
+        '(T$\simeq$' + str(np.ceil(data.T[temp-1]))+' $\pm$ ' + str(np.ceil(data.delta_T[temp-1]))+' Celsius)' + "$V_{cutoff}=$" + str(v) + "V")
     plt.legend()
     plt.grid()
     plt.savefig(filename)
