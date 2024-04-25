@@ -13,9 +13,21 @@ import richardson_data as rd
 # for i in range(3):
 #     child.child_fit(V_min=3, V_max=20, temp=i+1, func=False, use_odr=True)
 
+child.child_fit(V_min=3, V_max=20, temp=1, func='V')
+child.child_fit(V_min=3, V_max=20, temp=1, func='J')
+child.child_fit(V_min=3, V_max=20, temp=1, func='F')
+child.child_fit(V_min=3, V_max=20, temp=1, func='L')
+child.child_fit(V_min=3, V_max=20, temp=1, func='P')
+
+child.child_fit(V_min=3, V_max=20, temp=2, func='V')
+child.child_fit(V_min=3, V_max=20, temp=2, func='J')
+child.child_fit(V_min=3, V_max=20, temp=2, func='F')
+child.child_fit(V_min=3, V_max=20, temp=2, func='L')
+child.child_fit(V_min=3, V_max=20, temp=2, func='P')
+
 child.child_fit(V_min=3, V_max=20, temp=3, func='V')
 child.child_fit(V_min=3, V_max=20, temp=3, func='J')
-child.child_fit(V_min=3, V_max=13, temp=3, func='F')
+child.child_fit(V_min=3, V_max=20, temp=3, func='F')
 child.child_fit(V_min=3, V_max=20, temp=3, func='L')
 child.child_fit(V_min=3, V_max=20, temp=3, func='P')
 
