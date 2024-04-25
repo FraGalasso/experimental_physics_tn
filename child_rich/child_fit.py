@@ -2,18 +2,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 import constants as cst
 import child_data as data
-from fitting_functions_child import odr_child_fitter, curve_fit_child_fitter
+from fitting_functions_child import child_fitter
 
 
-def child_fit(V_cutoff=13, temp=1, lin=True, use_odr=True):
-    '''Fits our data, we can decide which subroutine we want (scipy.odr or scipy.curve_fit)
-    and whether we want a linear or a power law fit. Returns an array with best fit parameters
-    on the first row and their standard deviations on the second row'''
+def child_fit(V_min=3, V_max=13, temp=1, func='V'):
+    '''Fits our data. Returns an array with best fit parameters
+    on the first row and their standard deviations on the second row.
+    We can decide which is function to use: V for voltage shift, J for
+    current shift, F to fix the value 1.5, L for a plain linear fit,
+    P for a plain power fit'''
 
     if temp not in [1, 2, 3]:
-        raise ValueError("temp must be 1, 2, or 3")
-    if V_cutoff < 0:
-        raise ValueError("Negative V_cutoff")
+        raise ValueError("temp must be 1, 2 or 3")
+    if ((V_max < 0) | (V_min < 0)):
+        raise ValueError("Invalid voltages")
 
     voltages = (data.V_g1, data.V_g2, data.V_g3)
     delta_voltages = (data.delta_V_g1, data.delta_V_g2, data.delta_V_g3)
@@ -21,7 +23,8 @@ def child_fit(V_cutoff=13, temp=1, lin=True, use_odr=True):
     delta_currents = (data.delta_I_g1, data.delta_I_g2, data.delta_I_g3)
 
     # selecting elements with v < V_cutoff and their corresponding errors
-    indices = np.flatnonzero(voltages[temp-1] < V_cutoff)
+    indices = np.where((voltages[temp-1] > V_min)
+                       & ((voltages[temp-1] < V_max)))
 
     volts = voltages[temp-1][indices]
     delta_volts = delta_voltages[temp-1][indices]
@@ -34,41 +37,60 @@ def child_fit(V_cutoff=13, temp=1, lin=True, use_odr=True):
         data.delta_grid_radius/data.grid_radius)**2 + (data.delta_grid_len/data.grid_len)**2)
 
     # not really proud of this, it's a bit convoluted
-    if lin:
+    if func == 'L':
         log_j = np.log(curr_dens)
         delta_log_j = delta_curr_dens / curr_dens
         log_v = np.log(volts)
         delta_log_v = delta_volts / volts
-        # best guess for constant term in linear fit
         bg_a = np.log(4 * cst.eps_0 * np.sqrt(2 * cst.e_charge /
                       cst.e_mass) / (9 * (data.grid_radius**2)))
-        if use_odr:
-            output = odr_child_fitter(
-                log_v, log_j, delta_log_v, delta_log_j, bg_a)
-            print_child_result(output, lin)
-            plot_child_result(V_cutoff, output, log_v, log_j, delta_log_v,
-                              delta_log_j, temp=temp)
-        else:
-            output = curve_fit_child_fitter(log_v, log_j, delta_log_j, bg_a)
-            print_child_result(output, lin)
-            plot_child_result(V_cutoff, output, log_v, log_j,
-                              delta_y=delta_log_j, temp=temp)
-    else:  # lin = False
-        # best guess for constant term in linear fit
+        beta = [bg_a, 1.5]
+
+        output = child_fitter(log_v, log_j, delta_log_v, delta_log_j,
+                              beta, func)
+        # print_child_result(output, func)
+        # plot_child_result(V_max, output, log_v, log_j, delta_log_v,
+        # delta_log_j, temp=temp)
+    elif func == 'P':
+        bg_a = 4 * cst.eps_0 * np.sqrt(2 * cst.e_charge /
+                                       cst.e_mass) / (9 * (data.grid_radius**2))
+        beta = [bg_a, 1.5]
+
+        output = child_fitter(volts, curr_dens, delta_volts, delta_curr_dens,
+                              beta, func)
+        # print_child_result(output, func)
+        # plot_child_result(V_max, output, volts, curr_dens, delta_volts, delta_curr_dens, temp=temp)
+    elif func == 'F':
+        log_j = np.log(curr_dens)
+        delta_log_j = delta_curr_dens / curr_dens
         bg_a = np.log(4 * cst.eps_0 * np.sqrt(2 * cst.e_charge /
                       cst.e_mass) / (9 * (data.grid_radius**2)))
-        if use_odr:
-            output = odr_child_fitter(volts, curr_dens, delta_volts,
-                                      delta_curr_dens, bg_a, False)
-            print_child_result(output, lin)
-            plot_child_result(V_cutoff, output, volts, curr_dens, delta_volts,
-                              delta_curr_dens, False, temp=temp)
-        else:
-            output = curve_fit_child_fitter(volts, curr_dens,
-                                            delta_curr_dens, bg_a, False)
-            print_child_result(output, lin)
-            plot_child_result(V_cutoff, output, volts, curr_dens,
-                              delta_y=delta_curr_dens, linear_fit=False, temp=temp)
+        beta = [bg_a, 0]
+
+        output = child_fitter(volts, log_j, delta_volts, delta_log_j,
+                              beta, func)
+        # print_child_result(output, func)
+        # plot_child_result(V_max, output, volts, curr_dens, delta_volts, delta_curr_dens, temp=temp)
+    elif func == 'V':
+        log_j = np.log(curr_dens)
+        delta_log_j = delta_curr_dens / curr_dens
+        bg_a = np.log(4 * cst.eps_0 * np.sqrt(2 * cst.e_charge /
+                      cst.e_mass) / (9 * (data.grid_radius**2)))
+        beta = [bg_a, 1.5, 0]
+
+        output = child_fitter(volts, log_j, delta_volts, delta_log_j,
+                              beta, func)
+        # print_child_result(output, func)
+        # plot_child_result(V_max, output, volts, curr_dens, delta_volts, delta_curr_dens, temp=temp)
+    elif func == 'J':
+        bg_a = 4 * cst.eps_0 * np.sqrt(2 * cst.e_charge /
+                                       cst.e_mass) / (9 * (data.grid_radius**2))
+        beta = [bg_a, 1.5, 0]
+
+        output = child_fitter(volts, curr_dens, delta_volts, delta_curr_dens,
+                              beta, func)
+        # print_child_result(output, func)
+        # plot_child_result(V_max, output, volts, curr_dens, delta_volts, delta_curr_dens, temp=temp)
 
     return output
 
@@ -91,6 +113,7 @@ def print_child_result(output, linear_fit):
         print("4/9*eps_0*sqrt(2e/m)*1/rg^2=(",
               output[0, 0], "$\pm$", output[1, 0], ")A / (m^2 V^3/2)")
         print("1.5=", output[0, 1], "$\pm$", output[1, 1])
+        print("c=", output[0, 2], "$\pm$", output[1, 2])
         # charge to mass ratio
         ctm_ratio = 0.5 * (9*(data.grid_radius**2) *
                            output[0, 0] / (4*cst.eps_0))**2
@@ -115,14 +138,16 @@ def plot_child_result(v, output, x_data, y_data, delta_x=None, delta_y=None, lin
         y_theo = 4 * cst.eps_0 * \
             np.sqrt(2 * cst.e_charge / cst.e_mass) / \
             (9 * (data.grid_radius**2))*(x**1.5)
-        y_fit = output[0, 0]*(x**output[0, 1])
+        # y_fit = output[0, 0]*(x**output[0, 1])
+        # y_fit = output[0, 0] + output[0, 1] * np.log(x+output[0, 2])
+        y_fit = output[0, 0]*(x**output[0, 1])+output[0, 2]
         plt.xlabel('Grid Voltage $V_g$ [V]')
         plt.ylabel('Grid Density Current $J_g$ [A/m$^2$]')
-        filename = "plot_T" + str(temp) + "_power_" + v + ".png"
+        filename = "plot_T" + str(temp) + "_power_" + str(v) + ".png"
 
-    fit_label = f'a = {output[0, 0]:.2f}, b = {output[0, 1]:.2f}'
+    fit_label = f'a = {output[0, 0]:.2f}, b = {output[0, 1]:.2f}, c = {output[0, 2]:.2f}'
 
-    plt.plot(x, y_theo, label='model')
+    # plt.plot(x, y_theo, label='model')
     plt.plot(x, y_fit, label=fit_label)
     plt.errorbar(x_data, y_data, xerr=delta_x, yerr=delta_y, label='data',
                  linestyle='None', marker='.')
