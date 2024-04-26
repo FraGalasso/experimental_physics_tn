@@ -1,25 +1,24 @@
 import numpy as np
-from scipy.optimize import curve_fit
 from scipy import odr
 
 
 def linear(pp, x):
     return pp[0] + pp[1] * x
 
+
 def power_law(pp, x):
-    # if np.any(x < 0):
-    #     x = np.abs(x)
     return (pp[0] * (x ** pp[1]))
 
+
 def linear_fixed_coeff(pp, x):
-    if (np.any(x < -pp[1])):
-        pp[1] = -min(x) + 1e-9
+    # if (np.any(x < -pp[1])):
+    #    pp[1] = -min(x) + 1e-9
     return (pp[0] + 1.5 * np.log(x + pp[1]))
 
 
 def linear_volt_shift(pp, x):
-    if (np.any(x < -pp[2])):
-        pp[1] = -min(x) + 1e-9
+    # if (np.any(x < -pp[2])):
+    #     pp[1] = -min(x) + 1e-9
     return (pp[0] + pp[1] * np.log(x + pp[2]))
 
 

@@ -36,8 +36,8 @@ def child_fit(V_min=3, V_max=13, temp=1, func='V'):
     delta_curr_dens = curr_dens * np.sqrt((delta_curr/curr)**2 + (
         data.delta_grid_radius/data.grid_radius)**2 + (data.delta_grid_len/data.grid_len)**2)
 
-    # not really proud of this, it's a bit convoluted
     if func == 'L':
+        # log(J) = a + b * log(V)
         log_j = np.log(curr_dens)
         delta_log_j = delta_curr_dens / curr_dens
         log_v = np.log(volts)
@@ -49,9 +49,10 @@ def child_fit(V_min=3, V_max=13, temp=1, func='V'):
         output = child_fitter(log_v, log_j, delta_log_v, delta_log_j,
                               beta, func)
         print_child_result(output, func)
-        # plot_child_result(V_min, V_max, output, log_v, log_j, delta_log_v,
-            # delta_log_j, func, temp)
+        plot_child_result(V_min, V_max, output, log_v, log_j, delta_log_v,
+                          delta_log_j, func, temp)
     elif func == 'P':
+        # J = a * (v ^ b)
         bg_a = 4 * cst.eps_0 * np.sqrt(2 * cst.e_charge /
                                        cst.e_mass) / (9 * (data.grid_radius**2))
         beta = [bg_a, 1.5]
@@ -59,8 +60,10 @@ def child_fit(V_min=3, V_max=13, temp=1, func='V'):
         output = child_fitter(volts, curr_dens, delta_volts, delta_curr_dens,
                               beta, func)
         print_child_result(output, func)
-        # plot_child_result(V_min, V_max, output, volts, curr_dens, delta_volts, delta_curr_dens, func, temp)
+        plot_child_result(V_min, V_max, output, volts, curr_dens,
+                          delta_volts, delta_curr_dens, func, temp)
     elif func == 'F':
+        # log(J) = a + 1.5 log(V + c)
         log_j = np.log(curr_dens)
         delta_log_j = delta_curr_dens / curr_dens
         bg_a = np.log(4 * cst.eps_0 * np.sqrt(2 * cst.e_charge /
@@ -70,8 +73,10 @@ def child_fit(V_min=3, V_max=13, temp=1, func='V'):
         output = child_fitter(volts, log_j, delta_volts, delta_log_j,
                               beta, func)
         print_child_result(output, func)
-        # plot_child_result(V_min, V_max, output, volts, log_j, delta_volts, delta_log_j, func, temp=temp)
+        plot_child_result(V_min, V_max, output, volts, log_j,
+                          delta_volts, delta_log_j, func, temp=temp)
     elif func == 'V':
+        # log(J) = a + b * log(V + c)
         log_j = np.log(curr_dens)
         delta_log_j = delta_curr_dens / curr_dens
         bg_a = np.log(4 * cst.eps_0 * np.sqrt(2 * cst.e_charge /
@@ -81,8 +86,10 @@ def child_fit(V_min=3, V_max=13, temp=1, func='V'):
         output = child_fitter(volts, log_j, delta_volts, delta_log_j,
                               beta, func)
         print_child_result(output, func)
-        # plot_child_result(V_min, V_max, output, volts, log_j, delta_volts, delta_log_j, func, temp=temp)
+        plot_child_result(V_min, V_max, output, volts, log_j,
+                          delta_volts, delta_log_j, func, temp=temp)
     elif func == 'J':
+        # J = a * (v ^ b) + c
         bg_a = 4 * cst.eps_0 * np.sqrt(2 * cst.e_charge /
                                        cst.e_mass) / (9 * (data.grid_radius**2))
         beta = [bg_a, 1.5, 0]
@@ -90,7 +97,8 @@ def child_fit(V_min=3, V_max=13, temp=1, func='V'):
         output = child_fitter(volts, curr_dens, delta_volts, delta_curr_dens,
                               beta, func)
         print_child_result(output, func)
-        # plot_child_result(V_min, V_max, output, volts, curr_dens, delta_volts, delta_curr_dens, func, temp=temp)
+        plot_child_result(V_min, V_max, output, volts, curr_dens,
+                          delta_volts, delta_curr_dens, func, temp=temp)
 
     return output
 
@@ -101,7 +109,7 @@ def print_child_result(output, func):
     ctm_theo = cst.e_charge / cst.e_mass
 
     if func == 'L':
-        print("linear fit:")
+        print("Linear fit: log(J) = a + b * log(V)")
         print("log(4/9*eps_0*sqrt(2e/m)*1/rg^2) =",
               output[0, 0], "$\pm$", output[1, 0])
         print("1.5 =", output[0, 1], "$\pm$", output[1, 1])
@@ -109,7 +117,7 @@ def print_child_result(output, func):
         ctm_ratio = 0.5 * np.exp(2*output[0, 0]) * \
             (9*(data.grid_radius**2) / (4*cst.eps_0))**2
     elif func == 'P':
-        print("power law fit:")
+        print("Power law fit: J = a * (V ^ b)")
         print("4/9*eps_0*sqrt(2e/m)*1/rg^2 = (",
               output[0, 0], "$\pm$", output[1, 0], ") A / (m^2 V^3/2)")
         print("1.5 =", output[0, 1], "$\pm$", output[1, 1])
@@ -117,7 +125,8 @@ def print_child_result(output, func):
         ctm_ratio = 0.5 * (9*(data.grid_radius**2) *
                            output[0, 0] / (4*cst.eps_0))**2
     elif func == 'F':
-        print("linear fit, forcing 1.5 coefficient and adding a voltage shift:")
+        print("Linear fit, forcing 1.5 coefficient and adding a voltage shift:")
+        print("log(J) = a + 1.5 log(V + c)")
         print("log(4/9*eps_0*sqrt(2e/m)*1/rg^2) =",
               output[0, 0], "$\pm$", output[1, 0])
         print("c = (", output[0, 1], "$\pm$", output[1, 1], ") V")
@@ -125,7 +134,8 @@ def print_child_result(output, func):
         ctm_ratio = 0.5 * np.exp(2*output[0, 0]) * \
             (9*(data.grid_radius**2) / (4*cst.eps_0))**2
     elif func == 'V':
-        print("fit of logaritm, adding a voltage shift:")
+        print("Fit of logaritm, adding a voltage shift:")
+        print("log(J) = a + b * log(V + c)")
         print("log(4/9*eps_0*sqrt(2e/m)*1/rg^2) =",
               output[0, 0], "$\pm$", output[1, 0])
         print("1.5 =", output[0, 1], "$\pm$", output[1, 1])
@@ -134,7 +144,8 @@ def print_child_result(output, func):
         ctm_ratio = 0.5 * np.exp(2*output[0, 0]) * \
             (9*(data.grid_radius**2) / (4*cst.eps_0))**2
     elif func == 'J':
-        print("fit adding a current shift:")
+        print("Fit adding a current shift:")
+        print("J = a * (v ^ b) + c")
         print("4/9*eps_0*sqrt(2e/m)*1/rg^2 = (",
               output[0, 0], "$\pm$", output[1, 0], ") A / (m^2 V^3/2)")
         print("1.5 =", output[0, 1], "$\pm$", output[1, 1])
@@ -153,14 +164,16 @@ def plot_child_result(v_min, v_max, output, x_data, y_data, delta_x, delta_y, fu
     x = np.linspace(min(x_data), max(x_data), 100)
     plt.figure(dpi=200)
     if func == 'L':
+        # log_j = a + b * log_v
         y_theo = np.log(4 * cst.eps_0 * np.sqrt(2 * cst.e_charge /
                         cst.e_mass) / (9 * (data.grid_radius**2))) + 1.5 * x
         y_fit = output[0, 0] + x * output[0, 1]
         plt.xlabel('log($V_g$)')
         plt.ylabel('log($J_g$)')
         filename = f'plot_T{temp}_linear_{v_min}_{v_max}.png'
-        fit_label = f'a = {output[0, 0]:.2f}, b = {output[0, 1]:.2f}'
+        fit_label = f'a = {output[0, 0]:.2g}, b = {output[0, 1]:.2g}'
     elif func == 'P':
+        # J = a * (v ^ b)
         y_theo = 4 * cst.eps_0 * \
             np.sqrt(2 * cst.e_charge / cst.e_mass) / \
             (9 * (data.grid_radius**2))*(x**1.5)
@@ -168,43 +181,47 @@ def plot_child_result(v_min, v_max, output, x_data, y_data, delta_x, delta_y, fu
         plt.xlabel('Grid Voltage $V_g$ [V]')
         plt.ylabel('Grid Density Current $J_g$ [A/m$^2$]')
         filename = f'plot_T{temp}_power_{v_min}_{v_max}.png'
-        fit_label = f'a = {output[0, 0]:.2f}, b = {output[0, 1]:.2f}'
+        fit_label = f'a = {output[0, 0]:.2g}, b = {output[0, 1]:.2g}'
     elif func == 'F':
+        # log(J) = a + 1.5 log(V + c)
         y_theo = np.log(4 * cst.eps_0 * np.sqrt(2 * cst.e_charge /
                         cst.e_mass) / (9 * (data.grid_radius**2))) + 1.5 * np.log(x)
         y_fit = output[0, 0] + 1.5 * np.log(x + output[0, 1])
         plt.xlabel('Grid Voltage $V_g$ [V]')
         plt.ylabel('log($J_g$)')
         filename = f'plot_T{temp}_forced_{v_min}_{v_max}.png'
-        fit_label = f'a = {output[0, 0]:.2f}, c = {output[0, 1]:.2f}'
+        fit_label = f'a = {output[0, 0]:.2g}, c = {output[0, 1]:.2g}'
     elif func == 'V':
+        # log(J) = a + b * log(V + c)
         y_theo = np.log(4 * cst.eps_0 * np.sqrt(2 * cst.e_charge /
                         cst.e_mass) / (9 * (data.grid_radius**2))) + 1.5 * np.log(x)
         y_fit = output[0, 0] + output[0, 1] * np.log(x + output[0, 2])
         plt.xlabel('Grid Voltage $V_g$ [V]')
         plt.ylabel('log($J_g$)')
         filename = f'plot_T{temp}_volt_{v_min}_{v_max}.png'
-        fit_label = f'a = {output[0, 0]:.2f}, b = {output[0, 1]:.2f}, c = {output[0, 2]:.2f}'
+        fit_label = f'a = {output[0, 0]:.2g}, b = {output[0, 1]:.2g}, c = {output[0, 2]:.2f}'
     elif func == 'J':
+        # J = a * (v ^ b) + c
         y_theo = 4 * cst.eps_0 * \
             np.sqrt(2 * cst.e_charge / cst.e_mass) / \
             (9 * (data.grid_radius**2))*(x**1.5)
-        y_fit = output[0, 0]*(x**output[0, 1])+output[0,2]
+        y_fit = output[0, 0] * (x**output[0, 1]) + output[0, 2]
         plt.xlabel('Grid Voltage $V_g$ [V]')
         plt.ylabel('Grid Density Current $J_g$ [A/m$^2$]')
         filename = f'plot_T{temp}_curr_{v_min}_{v_max}.png'
-        fit_label = f'a = {output[0, 0]:.2f}, b = {output[0, 1]:.2f}, c = {output[0, 2]:.2f}'
+        fit_label = f'a = {output[0, 0]:.2g}, b = {output[0, 1]:.2g}, c = {output[0, 2]:.2f}'
 
-    plt.plot(x, y_theo, label='model')
+    # plt.plot(x, y_theo, label='model')
     plt.plot(x, y_fit, label=fit_label)
     plt.errorbar(x_data, y_data, xerr=delta_x, yerr=delta_y, label='data',
                  linestyle='None', marker='.')
     plt.title(
-        '(T$\simeq$' + str(np.ceil(data.T[temp-1]))+' $\pm$ ' + str(np.ceil(data.delta_T[temp-1])) 
+        '(T$\simeq$' + str(np.ceil(data.T[temp-1])) +
+        ' $\pm$ ' + str(np.ceil(data.delta_T[temp-1]))
         + ' Celsius), ' + "$V_{min}=$" + str(v_min) + "V, " + "$V_{max}=$" + str(v_max) + "V")
     plt.legend()
     plt.grid()
-    plt.savefig(filename)
+    # plt.savefig(filename)
     plt.show()
 
     plt.close()
