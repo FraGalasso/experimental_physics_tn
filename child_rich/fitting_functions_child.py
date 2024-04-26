@@ -18,7 +18,7 @@ def linear_fixed_coeff(pp, x):
 
 def linear_volt_shift(pp, x):
     # if (np.any(x < -pp[2])):
-    #     pp[1] = -min(x) + 1e-9
+    #     pp[2] = -min(x) + 1e-9
     return (pp[0] + pp[1] * np.log(x + pp[2]))
 
 
