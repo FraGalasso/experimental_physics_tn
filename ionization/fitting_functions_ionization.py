@@ -1,8 +1,10 @@
 import numpy as np
 from scipy import odr
 
+
 def linear_odr(pp, x):
     return pp[0] + pp[1] * x
+
 
 def odr_linear_fitter(x, y, dx, dy, bg=[1, 1]):
     '''Fits data with scipy.odr: one has to provide data arrays, 
