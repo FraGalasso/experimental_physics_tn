@@ -6,10 +6,9 @@ from constants import e_charge, N_A, energy_ion_N_theo, energy_ion_Ar_theo, ener
 
 
 def ion_fit(v_min=25, v_max=60, species='N'):
-    '''Fits our data. Returns an array with best fit parameters
-    on the first row and their standard deviations on the second row.
-    We can decide which is data to fit: N for Nitrogen, Ar for Argon,
-    He for Helium, CO2 for CO2.'''
+    '''Fits our data. Returns an array with ionization energy and its 
+    standard deviation in eV. We can decide which is data to fit: N for
+    Nitrogen, Ar for Argon, He for Helium, CO2 for CO2.'''
 
     if (v_min < 0) | (v_max < 0) | (v_max < v_min):
         raise ValueError("Invalid voltages")
@@ -64,7 +63,7 @@ def ion_fit(v_min=25, v_max=60, species='N'):
         plot_ion_results(result, v_min, v_max, data.V_g_He, data.ratio_He,
                          data.delta_V_g_He, data.delta_ratio_He, species)
 
-    return result
+    return [ion_eV, delta_ion_eV]
 
 
 def print_ion_results(result, ion_eV, delta_ion_eV, species='N'):
