@@ -3,19 +3,14 @@ import ionization_data as id
 
 id.plot_ionization_data()
 
-# results = []
-# 
-# for i in range(5):
-#    for j in range(i + 1, 9):
-#        print(f'\nV_min = {15+5*i} V, V_max = {15+5*j} V')
-#        r = ion.ion_fit(15 + 5 * i, 15 + 5 * j, 'CO2')
-#        results.append(r[0, 0])
-# 
-# print(results)
+ion.ion_fit(17, 27, 'N')
+ion.ion_fit(27, 55, 'N')
 
+ion.ion_fit(17, 23, 'Ar')
+ion.ion_fit(23, 55, 'Ar')
 
-ion.ion_fit(22, 36, 'N')
-ion.ion_fit(15, 55, 'N')
-ion.ion_fit(20, 38, 'Ar')
-ion.ion_fit(18, 40, 'Ar')
-ion.ion_fit(15, 55, 'Ar')
+ion.ion_fit(18, 27, 'He')
+ion.ion_fit(27, 55, 'He')
+
+ion.ion_fit(16, 23, 'CO2')
+ion.ion_fit(23, 55, 'CO2')
