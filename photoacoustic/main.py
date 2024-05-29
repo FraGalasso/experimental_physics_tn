@@ -21,6 +21,11 @@ delta_intensities = np.array(
 delta_offset = np.array([0.02, 0.01, 0.02, 0.04, 0.02,
                         0.03, 0.02, 0.03, 0.05, 0.02, 0.07, 0.05, 0.01])
 
+# intensities = np.delete(intensities, 8)
+# offset = np.delete(offset, 8)
+# delta_intensities = np.delete(delta_intensities, 8)
+# delta_offset = np.delete(delta_offset, 8)
+
 intensities_eff = intensities - offset
 delta_intensities_eff = np.sqrt(delta_intensities**2 + delta_offset**2)
 
@@ -28,20 +33,16 @@ co2_flux = np.array([3.78, 3.48, 3.18, 2.88, 2.58, 2.28,
                     1.98, 1.68, 1.38, 1.08, 0.68, 0.28, 0])
 air_flux = np.array([497, 497, 497, 497, 497, 497,
                     497, 497, 497, 497, 497, 497, 497])
+
+# co2_flux = np.delete(co2_flux, 8)
+# air_flux = np.delete(air_flux, 8)
+
 delta_co2_flux = co2_flux * 0.002
 delta_air_flux = air_flux * 0.002
 delta_co2_flux[-1] = delta_co2_flux[-2]
 concentrations = co2_flux/(co2_flux + air_flux)*100
 delta_concentrations = np.sqrt((air_flux * delta_co2_flux)**2 +
                                (co2_flux * delta_air_flux)**2) / ((co2_flux + air_flux)**2) * 100
-
-'''popt, pcov = curve_fit(linear, concentrations, intensities_eff,
-                       sigma=delta_intensities_eff, absolute_sigma=True)
-
-intercept = popt[0]
-delta_intercept = np.sqrt(pcov[0, 0])
-slope = popt[1]
-delta_slope = np.sqrt(pcov[1, 1])'''
 
 data_odr = odr.RealData(concentrations, intensities_eff,
                         delta_concentrations, delta_intensities_eff)
