@@ -35,20 +35,24 @@ def plot_color(data, filter, popt):
     if filter == 'Yellow':
         x_fit = np.linspace(min(data['Time1'][:9700]), max(
             data['Time1'][:9700]), 100)
+        wl = '578'
     elif filter == 'Red':
         x_fit = np.linspace(min(data['Time1'][:4700]), max(
             data['Time1'][:4700]), 100)
+        wl = '592'
     elif filter == 'Green':
         x_fit = np.linspace(min(data['Time1'][:6700]), max(
             data['Time1'][:6700]), 100)
+        wl = '552'
     elif filter == '505':
         x_fit = np.linspace(min(data['Time1'][:5700]), max(
             data['Time1'][:5700]), 100)
+        wl = '505'
 
     y_fit = popt[0] + popt[1] * x_fit
 
     plt.figure(num=1, dpi=200)
-    plt.title('Potentiometer - ' + filter)
+    plt.title('Potentiometer - ' + wl + ' nm')
     data.plot(kind='scatter', x='Time1', y='Potentiometer',
               ax=plt.gca(), label='potentiometer')
     plt.plot(x_fit, y_fit, label='fit', color='orange')
@@ -56,14 +60,16 @@ def plot_color(data, filter, popt):
     plt.ylabel('Voltage [V]')
     plt.legend()
     plt.grid()
+    plt.savefig(filter + '_pot.pdf')
 
     plt.figure(num=2, dpi=200)
-    plt.title('Lock-in - ' + filter)
+    plt.title('Lock-in - ' + wl + ' nm')
     data.plot(kind='scatter', x='Time1', y='Lock_in',
               ax=plt.gca(), label='lock-in')
     plt.xlabel('Time [s]')
     plt.ylabel('Voltage [V]')
     plt.grid()
+    plt.savefig(filter + '_lockin.pdf')
 
     if filter == 'Yellow':
         data = data.iloc[:9700]
@@ -75,12 +81,13 @@ def plot_color(data, filter, popt):
         data = data.iloc[:4700]
 
     plt.figure(num=3, dpi=200)
-    plt.title('Potentiometer vs Lock-in - ' + filter)
+    plt.title('Potentiometer vs Lock-in - '  + wl + ' nm')
     data.plot(kind='scatter', x='Potentiometer', y='Lock_in',
               ax=plt.gca())
     plt.xlabel('Potentiometer voltage [V]')
     plt.ylabel('Lock-in voltage [V]')
     plt.grid()
+    plt.savefig(filter + '.pdf')
     plt.show()
 
 
