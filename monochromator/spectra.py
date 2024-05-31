@@ -11,5 +11,5 @@ part, the magic numbers are 15709 for led 1 and 15866 for led 2.'''
 
 
 final_data = read_data('backwards_highnoise.csv')
-plot_spectrum(final_data, 'Extra part', filename='backwards_highnoise.png')
-plot_spectrum(final_data, 'Extra part', filename='backwards_highnoise.pdf')
+plot_spectrum(final_data, 'Ar - Kr spectrum', filename='backwards_highnoise.png')
+plot_spectrum(final_data, 'Ar - Kr spectrum', filename='backwards_highnoise.pdf')
