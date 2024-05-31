@@ -1,4 +1,5 @@
-try*
+try.py
+try_fit.py
 child_rich/__pycache__
 ionization/__pycache__
 monochromator/__pycache__

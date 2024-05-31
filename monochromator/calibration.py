@@ -20,10 +20,10 @@ popt_5, pcov_5 = curve_fit(
     linear, extra_filter_data['Time1'][:5700], extra_filter_data['Potentiometer'][:5700])
 
 # plotting all the data
-# plot_color(yellow_data, 'Yellow', popt_y)
-# plot_color(red_data, 'Red', popt_r)
-# plot_color(green_data, 'Green', popt_g)
-# plot_color(extra_filter_data, '505', popt_5)
+plot_color(yellow_data, 'Yellow', popt_y)
+plot_color(red_data, 'Red', popt_r)
+plot_color(green_data, 'Green', popt_g)
+plot_color(extra_filter_data, '505', popt_5)
 
 # finding peaks in lock-in data and corresponding potentiometer distribution
 peak_y = lin_fit_peak(yellow_data, 'Yellow', popt_y)

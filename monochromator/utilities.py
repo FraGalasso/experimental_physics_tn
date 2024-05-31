@@ -98,7 +98,7 @@ def plot_spectrum(data, title=None, label=None, filename=None):
     plt.figure(dpi=200)
     plt.title(title)
     data.plot(kind='scatter', x='Wavelength', y='Lock_in',
-                   ax=plt.gca(), label=label)
+                   ax=plt.gca(), label=label, marker='.')
     plt.xlabel('Wavelength [nm]')
     plt.ylabel('Voltage [V]')
     plt.grid()
