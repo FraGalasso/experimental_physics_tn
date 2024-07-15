@@ -1,6 +1,9 @@
 try.py
 try_fit.py
+double_peak.py
 child_rich/__pycache__
 ionization/__pycache__
 monochromator/__pycache__
 mass_spectrometry
+final_experiment/other
+final_experiment/__pycache__
