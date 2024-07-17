@@ -1,17 +1,15 @@
 import reading_file as rd
 
-filenames1 = ['noise1_51_v.dat']
-filenames2 = ['noise2_53_v.dat']
+filenames = []
 
-# for i in range(4, 14):
-#     filenames.append(f'AC_measurement_{i}_v.dat')
+for i in range(6, 8):
+    filenames.append(f'noise5_{i}_v.dat')
 
-for item in filenames1:
-    rd.first_line(item, 'final_experiment/data/noise_16afternoon/')
+for item in filenames:
+    rd.first_line(item, 'final_experiment/data/noise_17morning/')
 
-for item in filenames2:
-    rd.first_line(item, 'final_experiment/data/noise_16afternoon/')
+rd.file_segmentation(t_start=4734228.339, files=filenames, time_block=8400, blocks=6,
+                       filename='ac_second', path='final_experiment/data/noise_17morning/')
 
-rd.file_segmentation(4726706.538+120, filenames1, 2073.101-120, 1, 'noise1', 'final_experiment/data/noise_16afternoon/')
-rd.file_segmentation(4728902.438+120, filenames2, 2261.901-120, 1, 'noise2', 'final_experiment/data/noise_16afternoon/')
-
+rd.file_segmentation_1(t_start=4790716.167, t_finish=4792565.668, files=filenames, delay_start=120, delay_finish=120,
+                       filename='noise5', path='final_experiment/data/noise_17morning/')

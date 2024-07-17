@@ -29,7 +29,7 @@ def file_segmentation(t_start, files, time_block, blocks, filename='file', path=
         filtered_df.to_csv(path + filename + str(i+1) + '.csv', index=False)
 
 
-def file_segmentation_1(files, t_start, t_finish, delay_start=0, delay_finish=0, filename='file', path='final_experiment/'):
+def file_segmentation_1(t_start, t_finish, files, delay_start=0, delay_finish=0, filename='file', path='final_experiment/'):
 
     file_segmentation(t_start=t_start+delay_start, files=files,
-                      time_block=t_finish-delay_finish, blocks=1, filename=filename, path=path)
+                      time_block=t_finish-t_start-delay_finish, blocks=1, filename=filename, path=path)
