@@ -2,16 +2,36 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
-
-# Define the sinusoidal model function
-def sin_cos_func(x, A, B, f, x0):
-    return A*np.sin(2*np.pi*f*(x-x0))+B*np.cos(2*np.pi*f*(x-x0))
+# COMMON FUNCTIONS
 
 
 # Just a linear function
 def lin_func(x, m, q):
-    return m*x+q
+    return m * x + q
 
+
+# Function which takes a vector and returns mean and std dev of the mean
+def stats(vec):
+    return np.mean(vec), np.std(vec) / np.sqrt(len(vec))
+
+# DC MEASUREMENT : only A, B
+
+
+# Define the sinusoidal model function
+def sin_cos_func(x, A, B, f, x0):
+    return A * np.sin(2 * np.pi * f * (x - x0)) + B * np.cos(2 * np.pi * f * (x - x0))
+
+
+# Determine A and B for a given time interval
+def determine_A_B_in_interval(time, channel, t_0, f_MOD):
+    def model(time, A, B): return sin_cos_func(time, A, B, f=f_MOD, x0=t_0)
+    popt, pcov = curve_fit(model, time, channel)
+    A = popt[0]
+    B = popt[1]
+    return A, B
+
+
+# determine t0, f_MOD
 def determine_t0_fmod_function(time, channel3, f_MOD, plot, n_divisions):
     n_samples = len(time)
     n_samples_per_division = int(n_samples/n_divisions)
@@ -24,12 +44,12 @@ def determine_t0_fmod_function(time, channel3, f_MOD, plot, n_divisions):
     error = 0
 
     # 2 iterations should be sufficient
-    while(error <= np.abs(m)):
+    while (error <= np.abs(m)):
         # correct f_MOD from previous step
         f_MOD = f_MOD-delta
         def model(x, A, B): return sin_cos_func(x, A, B, f=f_MOD, x0=0)
 
-        # split the  sample in n blocks
+        # split the sample in n blocks
         for i in range(n_divisions):
             start_point = int(i*n_samples_per_division)
             end_point = int((i+1)*n_samples_per_division)
@@ -44,10 +64,10 @@ def determine_t0_fmod_function(time, channel3, f_MOD, plot, n_divisions):
 
         # linear fit in order to find dphi/dt
         popt, pcov = curve_fit(lin_func, xmean_vec, phi_vec)
-        m = popt[0] # dphi/dt
+        m = popt[0]  # dphi/dt
         q = popt[1]
-        delta = m/(2*np.pi) # correction to the next f_MOD
-        error = np.sqrt(pcov[0,0])
+        delta = m/(2*np.pi)  # correction to the next f_MOD
+        error = np.sqrt(pcov[0, 0])
 
         t0 = np.mean(phi_vec)/(2*np.pi*f_MOD)
 
@@ -72,31 +92,41 @@ def determine_t0_fmod_function(time, channel3, f_MOD, plot, n_divisions):
 
     return t0, f_MOD
 
-# Determine A and B for a given time interval
-def determine_A_B_in_interval(time, channel, t_0, f_MOD):
-    model = lambda time, A, B: sin_cos_func(time, A, B, f=f_MOD, x0=t_0)
-    popt, _ = curve_fit(model, time, channel)
-    A = popt[0]
-    B = popt[1]
-    return A, B
 
 # Generate plot of A and B
-def generate_plot_A_B(xmean_vec, A_vec, B_vec, A_mean, A_std, B_mean, B_std):
+def generate_plot_A_B(xmean_vec, A_vec, B_vec):
     plt.figure(dpi=120)
     plt.plot(xmean_vec, A_vec, linestyle='None', marker='.', label='$A_{sin}$')
     plt.plot(xmean_vec, B_vec, linestyle='None', marker='.', label='$B_{cos}$')
     plt.title('Values of force amplitudes A and B of sinusoidal model')
-    plt.suptitle('A: %f +/- %f, B: %f +/- %f' % (A_mean, A_std, B_mean, B_std))
+    A_mean, A_err = stats(A_vec)
+    B_mean, B_err = stats(B_vec)
+    plt.suptitle('A: %f +/- %f, B: %f +/- %f' % (A_mean, A_err, B_mean, B_err))
     plt.xlabel('Interval index')
     plt.ylabel('Force amplitude coefficients')
     plt.legend()
     plt.grid()
     plt.show()
 
-def determine_A_B_func(n_divisions, time, channel, f_MOD, t_0, plot):
-    # Generate intervals
+
+# determines A and B for a long data collection by splitting the data into intervals of interval_length seconds
+# the function returns the mean and std dev/sqrt(n) of the mean of the amplitudes of A and B
+# interval length in seconds
+def determine_A_B_func(interval_length, time, channel, f_MOD, t_0, plot):
+
+    # define parameters
+    cycles_in_interval = interval_length * f_MOD
+    one_cycle_time = 1/f_MOD  # s
+
+    if not cycles_in_interval.is_integer():
+        cycles_in_interval = int(cycles_in_interval)
+        interval_length = one_cycle_time * cycles_in_interval
+        print('ERROR: interval length was not a multiple of the oscillation period. %f s used instead' % interval_length)
+
+    sampling_rate = 10  # Hz
     n_samples = len(time)
-    n_samples_per_division = int(n_samples / n_divisions)  # Here we are always rounding down, so we will cut out some data points at the end
+    n_samples_per_interval = int(sampling_rate * interval_length)
+    n_intervals = n_samples // n_samples_per_interval
 
     # Initialize lists to store A and B values
     A_vec = []
@@ -104,9 +134,10 @@ def determine_A_B_func(n_divisions, time, channel, f_MOD, t_0, plot):
     xmean_vec = []
 
     # Find A, B for each interval and append to vectors A_vec and B_vec
-    for i in range(0, n_divisions):
-        start_point = int(i * n_samples_per_division)
-        end_point = int((i + 1) * n_samples_per_division)
+    # SAREBBE BELLO CAMBIARE QUESTI IN BASE AL TIMESTAMP INVECE CHE IN BASE ALL'INDICE DEL SAMPLE
+    for i in range(0, n_intervals):
+        start_point = int(i * n_samples_per_interval)
+        end_point = int((i + 1) * n_samples_per_interval)
 
         time_int = time[start_point:end_point]
         channel_int = channel[start_point:end_point]
@@ -118,17 +149,13 @@ def determine_A_B_func(n_divisions, time, channel, f_MOD, t_0, plot):
         xmean_vec.append(np.mean(time_int))
 
     # Calculate mean and std devs and print
-    A_mean = np.mean(A_vec)
-    A_std = np.std(A_vec)/np.sqrt(n_divisions)
-    B_mean = np.mean(B_vec)
-    B_std = np.std(B_vec)/np.sqrt(n_divisions)
-
-    print('A: %f +/- %f' % (A_mean, A_std))
-    print('B: %f +/- %f' % (B_mean, B_std))
+    A_mean, A_err = stats(A_vec)
+    B_mean, B_err = stats(B_vec)
+    print('A: %f +/- %f' % (A_mean, A_err))
+    print('B: %f +/- %f' % (B_mean, B_err))
 
     # Plot the values
     if plot:
-        generate_plot_A_B(xmean_vec, A_vec, B_vec, A_mean, A_std, B_mean, B_std)
+        generate_plot_A_B(xmean_vec, A_vec, B_vec)
 
-    return A_mean, A_std, B_mean, B_std
-
+    return A_mean, A_err, B_mean, B_err
