@@ -2,9 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
-#----------------------------------------------------------
-'FUNCTIONS'
-
 def sin_cos_func(x, A, B, f, x0):
     
     return A*np.sin(2*np.pi*f*(x-x0))+B*np.cos(2*np.pi*f*(x-x0))
@@ -12,183 +9,118 @@ def sin_cos_func(x, A, B, f, x0):
 def lin_func(x, m, q):
     return m*x+q
 
-def determine_t0_fmod_function(x, y, f_MOD, n_divisions, plot):
-    '''
-    Given:
-        A*np.sin(2*np.pi*f_MOD*t)+B*np.cos(2*np.pi*f_MOD*t)
-        
-        where for time series x=t.
-        
-    Return the value t0 and f_MOD with:
-        phi=-arctan(B/A)
-        t0=phi/(2pif_MOD)
-        
-    The input data x and y are divided in a number of intervals (equal to n_divisions).
-    For every interval a fit to the above sinusoidal model is carried out to determine the parameters A and B.
-    that are used to obtained the value of phi.
-    Then a linear regression is performed (using for the x data the mean value of time of every interval).
-    In the end the slope obtained is used to modify the f_MOD, and repeat the proces once again.
-    The loop stops after reached the wanted resolution on the slope.
-    
+def determine_t0_fmod_function(time, channel3, f_MOD, plot, n_divisions):
+    n_samples = len(time)
+    n_samples_per_division = int(n_samples/n_divisions)
 
-    Parameters
-    ----------
-    x : array_like
-    
-        Values of the independent variable (defined in the above formula as t).
-        
-    y : array_like
-    
-        Values of the dependent variable.
-        
-    f_MOD : float
-        
-    Initial value of frequency of the wave.
-    
-    n_divisions : int
-    
-        Number of intervals into which the data set is divided.
-        
-    plot : bool
-        
-        If True create a plot of the different values of phi and x for every interval together with a curve data fit such data.
-        The plot is referred to the last loop done.
+    xmean_vec = np.zeros(n_divisions)
+    phi_vec = np.zeros(n_divisions)
 
-    Returns
-    -------
-    t0 : float
-    
-        Value of the time shift.
-        
-    f_MOD : float
-        
-        Modified frequency value.
+    delta = 0
 
-    '''
-    n_samples=len(x)
-    n_samples_per_division=int(n_samples/n_divisions)
-    
-    print('Determining t0 and f_MOD...')
-    print('Number samples: %d' %n_samples)
-    print('Number divisions: %d' %n_divisions)
-    print('Number samples per divisions: %d\n' %n_samples_per_division)
-    
-    
-    error=10**(-12)
-    j=0
-    m=0
-    while(j==0 or np.abs(m)>error):
-        
-        delta_f= m/(2*np.pi)
-        f_MOD=f_MOD-delta_f
-        
-        xmean_vec=np.zeros(n_divisions)
-        phi_vec=np.zeros(n_divisions)
-        
-        model=lambda x, A, B: sin_cos_func(x, A, B, f=f_MOD, x0=0)
-        
-        for i in range(0, n_divisions):
-            
-            start_point=int(i*n_samples_per_division)
-            end_point=int((i+1)*n_samples_per_division)
-            
-            x_new=x[start_point:end_point]
-            y_new=y[start_point:end_point]
-        
-            popt, pcov=curve_fit(model, x_new, y_new)
-        
-            xmean_vec[i]=np.mean(x_new)
-            phi_vec[i]=np.arctan2(-popt[1], popt[0])
-            
-        
-        popt, pcov=curve_fit(lin_func, xmean_vec, phi_vec)
-        m=popt[0]
-        q=popt[1]
-        
-        t0=(np.mean(phi_vec)/(2*np.pi*f_MOD))
-        
-        print('interation number: %d' %(j+1))
-        print('dphi_dt=%e' %m)
-        print('phi=%e' %(np.mean(phi_vec)))
-        print('t0=%e' %t0)
-        print('f_MOD=%e' %f_MOD, '\n')
-        j=j+1
-        # print()
-    
-    
-    
-    if plot:
-        x_fit=np.linspace(x[0], x[-1], 1000)
-        y_fit=m*x_fit+q
-        
-        plt.figure(dpi=120)
-        plt.plot(xmean_vec, phi_vec, linestyle='None', marker='+', label='interval data')
-        plt.plot(x_fit, y_fit, label='fit')
-        plt.title('$Fit \ to \ determine \ t_0 \ and \ f_{MOD}$')
-        plt.xlabel('t [s]')
-        plt.ylabel('phi [radians]')
-        plt.legend()
-        plt.grid()
-        plt.show()
+    for i in range(2):
+        f_MOD = f_MOD-delta
+        def model(x, A, B): return sin_cos_func(x, A, B, f=f_MOD, x0=0)
 
-    return t0, f_MOD 
+        for i in range(n_divisions):
+            start_point = int(i*n_samples_per_division)
+            end_point = int((i+1)*n_samples_per_division)
 
-def determine_A_B_func(x, y, t0, f_MOD, plot):
-    n_divisions=15
-    n_samples=len(x)
-    n_samples_per_division=int(n_samples/n_divisions)
+            x_new = time[start_point:end_point]
+            y_new = channel3[start_point:end_point]
+
+            popt, pcov = curve_fit(model, x_new, y_new)
+
+            xmean_vec[i] = np.mean(x_new)
+            phi_vec[i] = np.arctan2(-popt[1], popt[0])  # -B/A
+
+        popt, pcov = curve_fit(lin_func, xmean_vec, phi_vec)
+        m = popt[0]
+        q = popt[1]
+        delta = m/(2*np.pi)
+
+        t0 = np.mean(phi_vec)/(2*np.pi*f_MOD)
+
+        print(f'dphi_dt = {m} +/- {np.sqrt(pcov[0,0])}')
+        print(f'phi = {np.mean(phi_vec)}')
+        print(f't0 = {t0}')
+        print(f'f_mod = {f_MOD}')
+        print(f'delta f = {delta} +/- {np.sqrt(pcov[0,0])/(2*np.pi)}\n')
+
+        if plot:
+            x_fit = np.linspace(time[0], time[-1], 1000)
+            y_fit = m * x_fit + q
+            plt.figure(dpi=120)
+            plt.plot(xmean_vec, phi_vec, linestyle='None',
+                     marker='+', label='data of intervals')
+            plt.plot(x_fit, y_fit, label='fit')
+            plt.xlabel('t [s]')
+            plt.ylabel('phi [radians]')
+            plt.legend()
+            plt.grid()
+            plt.show()
+
+    return t0, f_MOD
     
-    print('Determining A and B...')
-    print('Number samples: %d' %n_samples)
-    print('Number divisions: %d' %n_divisions)
-    print('Number samples per divisions: %d\n' %n_samples_per_division)
-    
-    xmean_vec=np.zeros(n_divisions)
-    A_vec=np.zeros(n_divisions)
-    B_vec=np.zeros(n_divisions)
-    
-    model=lambda x, A, B: sin_cos_func(x, A, B, f=f_MOD, x0=t0)
+# Determine A and B for a given time interval
+def determine_A_B_in_interval(time, channel, t_0, f_MOD):
+    model = lambda time, A, B: sin_cos_func(time, A, B, f=f_MOD, x0=t_0)
+    popt, _ = curve_fit(model, time, channel)
+    A = popt[0]
+    B = popt[1]
+    return A, B
+
+# Generate plot of A and B
+def generate_plot_A_B(xmean_vec, A_vec, B_vec, A_mean, A_std, B_mean, B_std):
+    plt.figure(dpi=120)
+    plt.plot(xmean_vec, A_vec, linestyle='None', marker='+', label='$A_{sin}$')
+    plt.plot(xmean_vec, B_vec, linestyle='None', marker='+', label='$B_{cos}$')
+    plt.title('Values of force amplitudes A and B of sinusoidal model')
+    plt.suptitle('A: %f +/- %f, B: %f +/- %f' % (A_mean, A_std, B_mean, B_std))
+    plt.xlabel('Interval index')
+    plt.ylabel('Force amplitude coefficients')
+    plt.legend()
+    plt.grid()
+    plt.show()
+
+def determine_A_B_func(time, channel, f_MOD, t_0, plot, n_divisions,):
+    # Generate intervals
+    n_samples = len(time)
+    n_samples_per_division = int(n_samples / n_divisions)  # Here we are always rounding down, so we will cut out some data points at the end
+
+    # Initialize lists to store A and B values
+    A_vec = []
+    B_vec = []
+    xmean_vec = []
+
+    # Find A, B for each interval and append to vectors A_vec and B_vec
     for i in range(0, n_divisions):
-        start_point=int(i*n_samples_per_division)
-        end_point=int((i+1)*n_samples_per_division)
-        
-        x_new=x[start_point:end_point]
-        y_new=y[start_point:end_point]
-    
-        popt, pcov=curve_fit(model, x_new, y_new)
-        
-        xmean_vec[i]=np.mean(x_new)
-        A_vec[i]=popt[0]
-        B_vec[i]=popt[1]
-        
-    # x_fit=np.linspace(min(xmean_vec), max(xmean_vec), 1000)
-    
-    A_mean=np.mean(A_vec)
-    A_std=np.std(A_vec)
-    B_mean=np.mean(B_vec)
-    B_std=np.std(B_vec)
-    
-    print('A_mean: %f' %A_mean)
-    print('A_std: %f' %A_std)
-    print('B_mean: %f' %B_mean)
-    print('B_std: %f' %B_std)
-    
+        start_point = int(i * n_samples_per_division)
+        end_point = int((i + 1) * n_samples_per_division)
+
+        time_int = time[start_point:end_point]
+        channel_int = channel[start_point:end_point]
+
+        A, B = determine_A_B_in_interval(time_int, channel_int, t_0, f_MOD)
+
+        A_vec.append(A)
+        B_vec.append(B)
+        xmean_vec.append(np.mean(time_int))
+
+    # Calculate mean and std devs and print
+    A_mean = np.mean(A_vec)
+    A_std = np.std(A_vec)
+    B_mean = np.mean(B_vec)
+    B_std = np.std(B_vec)
+
+    print('A: %f +/- %f' % (A_mean, A_std))
+    print('B: %f +/- %f' % (B_mean, B_std))
+
+    # Plot the values
     if plot:
-        plt.figure(dpi=120)
-        plt.plot(xmean_vec, A_vec, linestyle='None', marker='+', label='$A_{sin}$')
-        plt.plot(xmean_vec, B_vec, linestyle='None', marker='+', label='$B_{cos}$')
-        plt.title('Values of force amplitudes A and B of sinusoidal model')
-        # plt.plot(x_fit, y_fit, label='fit')
-        plt.xlabel('t [s]')
-        plt.ylabel('F [N]')
-        plt.legend()
-        plt.grid()
-        plt.show()
-    
+        generate_plot_A_B(xmean_vec, A_vec, B_vec, A_mean, A_std, B_mean, B_std)
+
     return A_mean, A_std, B_mean, B_std
-    
-
-
 
 def fft_coeff_and_PSD_funct(x, Fs, window):
     
