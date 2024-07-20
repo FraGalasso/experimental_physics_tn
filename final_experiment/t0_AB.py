@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
+import pandas as pd
 
 # COMMON FUNCTIONS
 
@@ -95,17 +96,22 @@ def determine_t0_fmod_function(time, channel3, f_MOD, plot, n_divisions):
 
 # Generate plot of A and B
 def generate_plot_A_B(xmean_vec, A_vec, B_vec):
-    plt.figure(dpi=120)
+    plt.figure()
     plt.plot(xmean_vec, A_vec, linestyle='None', marker='.', label='$A_{sin}$')
     plt.plot(xmean_vec, B_vec, linestyle='None', marker='.', label='$B_{cos}$')
-    plt.title('Values of force amplitudes A and B of sinusoidal model')
-    A_mean, A_err = stats(A_vec)
-    B_mean, B_err = stats(B_vec)
-    plt.suptitle('A: %f +/- %f, B: %f +/- %f' % (A_mean, A_err, B_mean, B_err))
-    plt.xlabel('Interval index')
-    plt.ylabel('Force amplitude coefficients')
+    plt.axhline(y=dc_force_estimate(), color='r', linestyle='--',
+                linewidth=2, label='Estimated force')
+    # plt.suptitle('Values of force amplitudes A and B of sinusoidal model')
+    # A_mean, A_err = stats(A_vec)
+    # B_mean, B_err = stats(B_vec)
+    # plt.title('A: %f +/- %f, B: %f +/- %f' % (A_mean, A_err, B_mean, B_err))
+    plt.xlabel('Interval index [s]')
+    plt.ylabel('Force amplitude coefficients [N]')
+    plt.tight_layout()
+    plt.ticklabel_format(axis='y', style='sci', scilimits=(-3, -3))
     plt.legend()
     plt.grid()
+    # plt.savefig('final_experiment/pictures/calibration/ab_force.pdf')
     plt.show()
 
 
@@ -157,5 +163,48 @@ def determine_A_B_func(interval_length, time, channel, f_MOD, t_0, plot):
     # Plot the values
     if plot:
         generate_plot_A_B(xmean_vec, A_vec, B_vec)
+
+    return A_mean, A_err, B_mean, B_err
+
+# gives an estimate for the dc force in Newton
+def dc_force_estimate():
+    # CONSTANTS
+    D_b = 0.235   # m
+    d = 0.0165  # m
+    N_windings = 84
+    i_r = 0.996  # A
+    i_s = 0.097  # A
+    return 0.2e-6 * i_r * i_s * (N_windings**2) * np.pi * D_b / d
+
+
+def determine_A_B_func_alt(interval_length, time, channel, f_MOD, t_0, plot):
+
+    df = pd.DataFrame({'Time': time, 'Channel1': channel})
+    df['interval'] = np.floor(
+        (df['Time']-df['Time'].iloc[0]) / interval_length)
+
+    def apply_func(group):
+        t = group['Time'].values
+        y = group['Channel1'].values
+        avg_t = np.mean(t)
+        A, B = determine_A_B_in_interval(
+            time=t, channel=y, t_0=t_0, f_MOD=f_MOD)
+        return pd.Series({'A': A, 'B': B, 'avg_t': avg_t})
+
+    results = df.groupby('interval').apply(apply_func).reset_index()
+
+    A_list = results['A'].tolist()
+    B_list = results['B'].tolist()
+    avg_t_list = results['avg_t'].tolist()
+
+    # Calculate mean and std devs and print
+    A_mean, A_err = stats(A_list)
+    B_mean, B_err = stats(B_list)
+    print('A: %f +/- %f' % (A_mean, A_err))
+    print('B: %f +/- %f' % (B_mean, B_err))
+
+    # Plot the values
+    if plot:
+        generate_plot_A_B(avg_t_list, A_list, B_list)
 
     return A_mean, A_err, B_mean, B_err
