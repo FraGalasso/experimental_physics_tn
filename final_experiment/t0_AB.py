@@ -2,29 +2,30 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import pandas as pd
+import plot_functions as pltfunc
 
 # COMMON FUNCTIONS
 
 
-# Just a linear function
 def lin_func(x, m, q):
+    '''Just a linear function.'''
     return m * x + q
 
 
-# Function which takes a vector and returns mean and std dev of the mean
 def stats(vec):
+    '''Function which takes a vector and returns mean and std dev of the mean.'''
     return np.mean(vec), np.std(vec) / np.sqrt(len(vec))
 
 # DC MEASUREMENT : only A, B
 
 
-# Define the sinusoidal model function
 def sin_cos_func(x, A, B, f, x0):
+    '''Sinusoidal model function.'''
     return A * np.sin(2 * np.pi * f * (x - x0)) + B * np.cos(2 * np.pi * f * (x - x0))
 
 
-# Determine A and B for a given time interval
 def determine_A_B_in_interval(time, channel, t_0, f_MOD):
+    '''Determines A and B for a given time interval.'''
     def model(time, A, B): return sin_cos_func(time, A, B, f=f_MOD, x0=t_0)
     popt, pcov = curve_fit(model, time, channel)
     A = popt[0]
@@ -32,8 +33,8 @@ def determine_A_B_in_interval(time, channel, t_0, f_MOD):
     return A, B
 
 
-# determine t0, f_MOD
 def determine_t0_fmod_function(time, channel3, f_MOD, plot, n_divisions):
+    '''Determines t0, f_MOD.'''
     n_samples = len(time)
     n_samples_per_division = int(n_samples/n_divisions)
 
@@ -94,32 +95,10 @@ def determine_t0_fmod_function(time, channel3, f_MOD, plot, n_divisions):
     return t0, f_MOD
 
 
-# Generate plot of A and B
-def generate_plot_A_B(xmean_vec, A_vec, B_vec):
-    plt.figure()
-    plt.plot(xmean_vec, A_vec, linestyle='None', marker='.', label='$A_{sin}$')
-    plt.plot(xmean_vec, B_vec, linestyle='None', marker='.', label='$B_{cos}$')
-    plt.axhline(y=dc_force_estimate(), color='r', linestyle='--',
-                linewidth=2, label='Estimated force')
-    # plt.suptitle('Values of force amplitudes A and B of sinusoidal model')
-    # A_mean, A_err = stats(A_vec)
-    # B_mean, B_err = stats(B_vec)
-    # plt.title('A: %f +/- %f, B: %f +/- %f' % (A_mean, A_err, B_mean, B_err))
-    plt.xlabel('Interval index [s]')
-    plt.ylabel('Force amplitude coefficients [N]')
-    plt.tight_layout()
-    plt.ticklabel_format(axis='y', style='sci', scilimits=(-3, -3))
-    plt.legend()
-    plt.grid()
-    # plt.savefig('final_experiment/pictures/calibration/ab_force.pdf')
-    plt.show()
-
-
-# determines A and B for a long data collection by splitting the data into intervals of interval_length seconds
-# the function returns the mean and std dev/sqrt(n) of the mean of the amplitudes of A and B
-# interval length in seconds
-def determine_A_B_func(interval_length, time, channel, f_MOD, t_0, plot):
-
+def determine_A_B_func(interval_length, time, channel, f_MOD, t_0, plot, is_force=True):
+    '''Determines A, B for a long data collection by splitting the data into intervals of interval_length seconds.
+    The function returns the mean and std dev/sqrt(n) of the mean of the amplitudes of A and B.
+    Assumes data to be already in force units, if not use is_force=False.'''
     # define parameters
     cycles_in_interval = interval_length * f_MOD
     one_cycle_time = 1/f_MOD  # s
@@ -162,12 +141,13 @@ def determine_A_B_func(interval_length, time, channel, f_MOD, t_0, plot):
 
     # Plot the values
     if plot:
-        generate_plot_A_B(xmean_vec, A_vec, B_vec)
+        pltfunc.generate_plot_A_B(xmean_vec, A_vec, B_vec, is_force)
 
     return A_mean, A_err, B_mean, B_err
 
-# gives an estimate for the dc force in Newton
+
 def dc_force_estimate():
+    '''Gives an estimate for the DC force in Newton.'''
     # CONSTANTS
     D_b = 0.235   # m
     d = 0.0165  # m
@@ -177,8 +157,10 @@ def dc_force_estimate():
     return 0.2e-6 * i_r * i_s * (N_windings**2) * np.pi * D_b / d
 
 
-def determine_A_B_func_alt(interval_length, time, channel, f_MOD, t_0, plot):
-
+def determine_A_B_func_alt(interval_length, time, channel, f_MOD, t_0, plot, is_force=True):
+    '''Determines A, B for a long data collection by splitting the data into intervals of interval_length seconds.
+    The function returns the mean and std dev/sqrt(n) of the mean of the amplitudes of A and B.
+    Assumes data to be already in force units, if not use is_force=False.'''
     df = pd.DataFrame({'Time': time, 'Channel1': channel})
     df['interval'] = np.floor(
         (df['Time']-df['Time'].iloc[0]) / interval_length)
@@ -205,6 +187,6 @@ def determine_A_B_func_alt(interval_length, time, channel, f_MOD, t_0, plot):
 
     # Plot the values
     if plot:
-        generate_plot_A_B(avg_t_list, A_list, B_list)
+        pltfunc.generate_plot_A_B(avg_t_list, A_list, B_list, is_force)
 
     return A_mean, A_err, B_mean, B_err

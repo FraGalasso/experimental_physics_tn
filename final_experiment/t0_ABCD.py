@@ -1,29 +1,31 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
+import pandas as pd
+import plot_functions as pltfunc
 
 # COMMON FUNCTIONS
 
 
-# Just a linear function
 def lin_func(x, m, q):
+    '''Just a linear function.'''
     return m * x + q
 
 
-# Function which takes a vector and returns mean and std dev of the mean
 def stats(vec):
+    '''Function which takes a vector and returns mean and std dev of the mean.'''
     return np.mean(vec), np.std(vec) / np.sqrt(len(vec))
 
 # AC MEASUREMENT; with offset
 
 
-# Define the bisinusoidal model function
 def sin_cos_func_off(x, A, B, C, D, E, f, x0):
+    '''Bisinusoidal model function.'''
     return A * np.sin(2 * np.pi * f * (x - x0)) + B * np.cos(2 * np.pi * f * (x - x0)) + C * np.sin(2 * np.pi * 2*f * (x - x0)) + D * np.cos(2 * np.pi * 2*f * (x - x0)) + E
 
 
-# Determine A B C D for a given time interval
 def determine_A_B_C_D_in_interval_off(time, channel, t_0, f_MOD):
+    '''Determine A B C D for a given time interval.'''
     def model(time, A, B, C, D, E): return sin_cos_func_off(
         time, A, B, C, D, E, f=f_MOD, x0=t_0)
     popt, pcov = curve_fit(model, time, channel)
@@ -34,8 +36,8 @@ def determine_A_B_C_D_in_interval_off(time, channel, t_0, f_MOD):
     return A, B, C, D
 
 
-# Determine to, fmod using the a b c d with offset model
 def determine_t0_fmod_function(time, channel3, f_MOD, plot, n_divisions):
+    '''DetermineS t0, fmod using the A B C D with offset model.'''
     n_samples = len(time)
     n_samples_per_division = n_samples // n_divisions
 
@@ -98,33 +100,10 @@ def determine_t0_fmod_function(time, channel3, f_MOD, plot, n_divisions):
     return t0, f_MOD
 
 
-# Generate plot of A B C D
-def generate_plot_A_B_C_D(xmean_vec, A_vec, B_vec, C_vec, D_vec):
-    plt.figure(dpi=120)
-    plt.plot(xmean_vec, A_vec, linestyle='None', marker='.', label='$A_{sin}$')
-    plt.plot(xmean_vec, B_vec, linestyle='None', marker='.', label='$B_{cos}$')
-    plt.plot(xmean_vec, C_vec, linestyle='None',
-             marker='.', label='$C_{sin2}$')
-    plt.plot(xmean_vec, D_vec, linestyle='None',
-             marker='.', label='$D_{cos2}$')
-    plt.title('Values of force amplitudes A and B of sinusoidal model')
-    A_mean, A_err = stats(A_vec)
-    B_mean, B_err = stats(B_vec)
-    C_mean, C_err = stats(C_vec)
-    D_mean, D_err = stats(D_vec)
-    plt.suptitle('A: %f +/- %f, B: %f +/- %f, \n C: %f +/- %f, D: %f +/- %f' %
-                 (A_mean, A_err, B_mean, B_err, C_mean, C_err, D_mean, D_err))
-    plt.xlabel('Time stamp (s)')
-    plt.ylabel('Voltage amplitude coefficients')
-    plt.legend()
-    plt.grid()
-    plt.show()
-
-
-# determines A, B, C, D for a long data collection by splitting the data into intervals of interval_length seconds
-# the function returns the mean and std dev/sqrt(n) of the mean of the amplitudes of A B C and D
-def determine_A_B_C_D_func(interval_length, time, channel, f_MOD, t_0, plot):
-
+def determine_A_B_C_D_func(interval_length, time, channel, f_MOD, t_0, plot, freq=0, is_force=True):
+    '''Determines A, B, C, D for a long data collection by splitting the data into intervals of interval_length seconds.
+    The function returns the mean and std dev/sqrt(n) of the mean of the amplitudes of A B C and D.
+    Assumes data to be already in force units, if not use is_force=False.'''
     # define parameters
     cycles_in_interval = interval_length * f_MOD
     one_cycle_time = 1/f_MOD  # s
@@ -176,6 +155,62 @@ def determine_A_B_C_D_func(interval_length, time, channel, f_MOD, t_0, plot):
 
     # Plot the values
     if plot:
-        generate_plot_A_B_C_D(xmean_vec, A_vec, B_vec, C_vec, D_vec)
+        pltfunc.generate_plot_A_B_C_D(freq, xmean_vec, A_vec, B_vec, C_vec, D_vec, is_force)
+
+    return A_mean, A_err, B_mean, B_err, C_mean, C_err, D_mean, D_err
+
+
+# takes in the pars_list and std_list which are lists of lists. returns the separate lists
+def extract_values(df_freq, pars_list, stds_list):
+    # A is the first element in each sublist
+    a_values = [pars[0] for pars in pars_list]
+    a_std = [stds[0] for stds in stds_list]
+    b_values = [pars[1] for pars in pars_list]
+    b_std = [stds[1] for stds in stds_list]
+    c_values = [pars[2] for pars in pars_list]
+    c_std = [stds[2] for stds in stds_list]
+    d_values = [pars[3] for pars in pars_list]
+    d_std = [stds[3] for stds in stds_list]
+    return a_values, a_std, b_values, b_std, c_values, c_std, d_values, d_std
+
+
+def determine_A_B_C_D_func_alt(interval_length, time, channel, f_MOD, t_0, plot, freq=0, is_force=True):
+    '''Determines A, B, C, D for a long data collection by splitting the data into intervals of interval_length seconds.
+    The function returns the mean and std dev/sqrt(n) of the mean of the amplitudes of A B C and D.
+    Assumes data to be already in force units, if not use is_force=False.'''
+    
+    df = pd.DataFrame({'Time': time, 'Channel1': channel})
+    df['interval'] = np.floor(
+        (df['Time']-df['Time'].iloc[0]) / interval_length)
+
+    def apply_func(group):
+        t = group['Time'].values
+        y = group['Channel1'].values
+        avg_t = np.mean(t)
+        A, B, C, D = determine_A_B_C_D_in_interval_off(
+            time=t, channel=y, t_0=t_0, f_MOD=f_MOD)
+        return pd.Series({'A': A, 'B': B, 'C': C, 'D': D, 'avg_t': avg_t})
+
+    results = df.groupby('interval').apply(apply_func).reset_index()
+
+    A_list = results['A'].tolist()
+    B_list = results['B'].tolist()
+    C_list = results['C'].tolist()
+    D_list = results['D'].tolist()
+    avg_t_list = results['avg_t'].tolist()
+
+    # Calculate mean and std devs and print
+    A_mean, A_err = stats(A_list)
+    B_mean, B_err = stats(B_list)
+    C_mean, C_err = stats(C_list)
+    D_mean, D_err = stats(D_list)
+    print('A: %f +/- %f' % (A_mean, A_err))
+    print('B: %f +/- %f' % (B_mean, B_err))
+    print('C: %f +/- %f' % (C_mean, C_err))
+    print('D: %f +/- %f' % (D_mean, D_err))
+
+    # Plot the values
+    if plot:
+        pltfunc.generate_plot_A_B_C_D(freq, avg_t_list, A_list, B_list, C_list, D_list, is_force)
 
     return A_mean, A_err, B_mean, B_err, C_mean, C_err, D_mean, D_err
