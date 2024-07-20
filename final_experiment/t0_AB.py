@@ -173,7 +173,7 @@ def dc_force_estimate():
     d = 0.0165  # m
     N_windings = 84
     i_r = 0.996  # A
-    i_s = 0.097  # A
+    i_s = 0.13486  # A
     return 0.2e-6 * i_r * i_s * (N_windings**2) * np.pi * D_b / d
 
 
