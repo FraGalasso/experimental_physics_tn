@@ -116,6 +116,5 @@ def generate_plot_A_B_C_D(freq, xmean_vec, A_vec, B_vec, C_vec, D_vec, is_force=
     plt.tight_layout()
     plt.ticklabel_format(axis='y', style='sci', scilimits=(-6, -6))
     plt.grid()
-    plt.savefig('final_experiment/pictures/force/ABCD_' + str(freq) + '.pdf')
-    plt.savefig('final_experiment/pictures/force/ABCD_' + str(freq) + '.png')
+    # plt.savefig('final_experiment/pictures/force/ABCD_' + str(freq) + '.pdf')
     plt.show()
