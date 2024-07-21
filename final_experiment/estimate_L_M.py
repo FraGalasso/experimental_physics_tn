@@ -178,13 +178,13 @@ delta_k = np.sqrt(pcov_short[0, 0])
 print('Vs/Vgen (short circuit) fit:')
 print(f'k = {k} +/- {delta_k}')
 
-'MODEL'
+'Model'
 
 factor_1 = 1j*w_theo*L * (1 - (1j*w_theo*L*(k**2) / (1j*w_theo*L + R_l)))
 Vs_Vgen_short = (R_l+factor_1)/(R_gen+R_l+factor_1)
 ampl_Vs_Vgen_short = np.abs(Vs_Vgen_short)
 
-'PLOTS'
+'Plots'
 plt.figure()
 plt.errorbar(x=f_data, y=ampl_Vs_Vgen_data_short, yerr=delta_Vs_Vgen_short,
              linestyle='None', marker='.', label='Data: $V_S/V_{gen}$ short')
@@ -198,4 +198,73 @@ plt.legend()
 plt.grid()
 plt.tight_layout()
 # plt.savefig('final_experiment/pictures/lm_meas/V_s_short_1.pdf')
+# plt.show()
+
+
+'COPPER SHEET'
+
+'Data'
+df = pd.read_csv(
+    'final_experiment/data/LM_measurement/V_s_lastra.csv', delimiter=';')
+
+f_data = df['Freq'].to_numpy()
+w_data = 2*np.pi*f_data
+V_s_data_lastra = df['V_s'].to_numpy()
+delta_V_s_lastra = df['V/div'].to_numpy() * 8 * 0.035
+
+ampl_Vs_Vgen_data_lastra = V_s_data_lastra / V_gen
+delta_Vs_Vgen_lastra = ampl_Vs_Vgen_data_lastra * \
+    np.sqrt((delta_V_s_lastra / V_s_data_lastra)**2 + (delta_Vgen / V_gen)**2)
+
+'''
+'Non linear fit to find k and L from copper sheet data'
+
+
+# A is L, B is k, C is Rl
+def model(x, A, B, C): return Vs_Vgen_short_model(
+    x, L_value=A, k_value=B, Rgen_value=R_gen, Rl_value=C)
+
+
+popt_lastra, pcov_lastra = curve_fit(model, w_data, ampl_Vs_Vgen_data_lastra, p0=[
+    4, 0.5, 4.5], sigma=delta_Vs_Vgen_lastra, absolute_sigma=True)
+
+
+L_lastra = popt_lastra[0]
+delta_L_lastra = np.sqrt(pcov_lastra[0, 0])
+k_lastra = popt_lastra[1]
+delta_k_lastra = np.sqrt(pcov_lastra[1, 1])
+Rl_lastra = popt_lastra[2]
+delta_Rl_lastra = np.sqrt(pcov_lastra[2, 2])
+
+print('Vs/Vgen (copper sheet) fit:')
+print(f'L = {L_lastra} +/- {delta_L_lastra} H')
+print(f'k = {k_lastra} +/- {delta_k_lastra}')
+print(f'Rl = {Rl_lastra} +/- {delta_Rl_lastra} Ohm')
+
+'Model'
+
+factor_1 = 1j*w_theo*L_lastra * \
+    (1 - (1j*w_theo*L_lastra*(k**2) / (1j*w_theo*L_lastra + Rl_lastra)))
+Vs_Vgen_lastra = (Rl_lastra+factor_1)/(R_gen+Rl_lastra+factor_1)
+ampl_Vs_Vgen_lastra = np.abs(Vs_Vgen_lastra)
+
+label_l = f'$L_{{sheet}} = {1000*L_lastra:.3g} \\pm {1000*delta_L_lastra:.1g}$ mH\n'
+label_k = f'$k_{{sheet}} = {k_lastra:.3g} \\pm {k_lastra:.1g}$\n'
+label_rl = f'$R_{{l,sheet}} = {Rl_lastra:.3g} \\pm {delta_Rl_lastra:.1g} \Omega$'
+'''
+
+'Plots'
+plt.figure()
+plt.errorbar(x=f_data, y=ampl_Vs_Vgen_data_lastra, yerr=delta_Vs_Vgen_lastra,
+             linestyle='None', marker='.', label='Data: $V_S/V_{gen}$ copper sheet')
+'''plt.plot(f_theo, ampl_Vs_Vgen_lastra, linestyle='-',
+         marker='None', label=label_l+label_k+label_rl)'''
+plt.xlabel('f [Hz]')
+plt.ylabel('$V_S/V_{GEN}$')
+plt.xscale('log')
+plt.yscale('log')
+plt.legend()
+plt.grid()
+plt.tight_layout()
+# plt.savefig('final_experiment/pictures/lm_meas/V_s_lastra.pdf')
 plt.show()
