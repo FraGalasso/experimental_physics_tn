@@ -40,8 +40,7 @@ def plot_forcegraph(df_freq, pars_list, stds_list, is_force=True, plot_expected=
     plt.grid()
     plt.tight_layout()
     plt.ticklabel_format(axis='y', style='sci', scilimits=(-6, -6))
-    plt.savefig('final_experiment/pictures/force/force_freq.png')
-    plt.savefig('final_experiment/pictures/force/force_freq.pdf')
+    # plt.savefig('final_experiment/pictures/lastra/force_freq_lastra.pdf')
     plt.show()
 
 def plot_exp_force():
@@ -117,5 +116,5 @@ def generate_plot_A_B_C_D(freq, xmean_vec, A_vec, B_vec, C_vec, D_vec, is_force=
     plt.tight_layout()
     plt.ticklabel_format(axis='y', style='sci', scilimits=(-6, -6))
     plt.grid()
-    # plt.savefig('final_experiment/pictures/ABCD_' + str(freq) + '.pdf')
+    # plt.savefig('final_experiment/pictures/lastra/ABCD_' + str(freq) + '.png')
     plt.show()
