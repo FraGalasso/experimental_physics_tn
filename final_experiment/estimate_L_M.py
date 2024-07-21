@@ -189,7 +189,7 @@ plt.figure()
 plt.errorbar(x=f_data, y=ampl_Vs_Vgen_data_short, yerr=delta_Vs_Vgen_short,
              linestyle='None', marker='.', label='Data: $V_S/V_{gen}$ short')
 plt.plot(f_theo, ampl_Vs_Vgen_short, linestyle='-',
-         marker='None', label=f'$k = {k:.3g}\pm{delta_k:.1g}$')
+         marker='None', label=f'$k = {k:.2g}\pm{delta_k:.1g}$')
 plt.xlabel('f [Hz]')
 plt.ylabel('$V_S/V_{GEN}$')
 plt.xscale('log')
@@ -248,9 +248,9 @@ factor_1 = 1j*w_theo*L_lastra * \
 Vs_Vgen_lastra = (Rl_lastra+factor_1)/(R_gen+Rl_lastra+factor_1)
 ampl_Vs_Vgen_lastra = np.abs(Vs_Vgen_lastra)
 
-label_l = f'$L_{{sheet}} = {1000*L_lastra:.3g} \\pm {1000*delta_L_lastra:.1g}$ mH\n'
-label_k = f'$k_{{sheet}} = {k_lastra:.3g} \\pm {k_lastra:.1g}$\n'
-label_rl = f'$R_{{l,sheet}} = {Rl_lastra:.3g} \\pm {delta_Rl_lastra:.1g} \Omega$'
+label_l = f'$L_{{sheet}} = {1000*L_lastra:.2g} \\pm {1000*delta_L_lastra:.1g}$ mH\n'
+label_k = f'$k_{{sheet}} = {k_lastra:.1g} \\pm {k_lastra:.1g}$\n'
+label_rl = f'$R_{{l,sheet}} = {Rl_lastra:.2g} \\pm {delta_Rl_lastra:.1g} \Omega$'
 '''
 
 'Plots'
