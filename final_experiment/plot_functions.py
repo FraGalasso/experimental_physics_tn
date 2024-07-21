@@ -1,26 +1,19 @@
 import t0_AB
 import t0_ABCD
 import matplotlib.pyplot as plt
+import numpy as np
 import conversion as conv
+from estimate_force import ac_force_estimate
 
 
-def plot_parsgraph(df_freq, pars_list, stds_list, FS):
-    # Extract lists from lists of lists
+def plot_forcegraph(df_freq, pars_list, stds_list, is_force=True, plot_expected=True):
+    '''Generates plot of A and D forces as function of frequencies, assumes data to be already in force units,
+    if not use is_force=False. Compares data to expected force values, to deactivate use plot_expected=False.'''
     a_values, a_std, b_values, b_std, c_values, c_std, d_values, d_std = t0_ABCD.extract_values(
         df_freq, pars_list, stds_list)
 
-    # Convert into real volts using compvolt_to_realvolt function
-    a_values = conv.compvolt_to_realvolt(a_values, FS)
-    a_std = conv.compvolt_to_realvolt(a_std, FS)
-    b_values = conv.compvolt_to_realvolt(b_values, FS)
-    b_std = conv.compvolt_to_realvolt(b_std, FS)
-    c_values = conv.compvolt_to_realvolt(c_values, FS)
-    c_std = conv.compvolt_to_realvolt(c_std, FS)
-    d_values = conv.compvolt_to_realvolt(d_values, FS)
-    d_std = conv.compvolt_to_realvolt(d_std, FS)
-
     # Now plot
-    plt.figure(dpi=200)
+    plt.figure()
     plt.errorbar(df_freq, a_values, yerr=a_std, linestyle='None',
                  marker='.', label='$A_{sin f}$')
     plt.errorbar(df_freq, b_values, yerr=b_std, linestyle='None',
@@ -29,53 +22,45 @@ def plot_parsgraph(df_freq, pars_list, stds_list, FS):
                  marker='.', label='$C_{sin 2f}$')
     plt.errorbar(df_freq, d_values, yerr=d_std, linestyle='None',
                  marker='.', label='$D_{cos 2f}$')
+    if plot_expected:
+        exp_A = ac_force_estimate()
+        exp_D = exp_A/(-4)
+        f_AC = np.arange(80, 5000, 1)
+        plt.plot(f_AC, exp_A, linestyle='-',
+                 marker='None', label='$A_{sin f}$')
+        plt.plot(f_AC, exp_D, linestyle='-',
+                 marker='None', label='$D_{sin 2f}$')
     plt.xscale('log')
-    plt.title('Voltage amplitudes as a function of frequency')
     plt.xlabel('Frequency [Hz]')
-    plt.ylabel('Voltage amplitude coefficients [V]')
+    if is_force:
+        plt.ylabel('Force amplitude coefficients [N]')
+    else:
+        plt.ylabel('Voltage amplitude coefficients [V]')
     plt.legend()
-    plt.ticklabel_format(axis='y', style='sci', scilimits=(-6, -6))
     plt.grid()
     plt.tight_layout()
-    plt.savefig('graphs/ABCDplot_volts.png')
-    plt.close()
+    plt.ticklabel_format(axis='y', style='sci', scilimits=(-6, -6))
+    plt.savefig('final_experiment/pictures/force/force_freq.png')
+    plt.savefig('final_experiment/pictures/force/force_freq.pdf')
+    plt.show()
 
+def plot_exp_force():
+    '''Plots just expected values of the force.'''
+    A_ampl = ac_force_estimate()
+    D_ampl = -A_ampl/4
+    f_AC = np.arange(80, 5000, 1)
 
-def plot_forcegraph(df_freq, pars_list, stds_list, FS):
-    # Extract lists from lists of lists
-    a_values, a_std, b_values, b_std, c_values, c_std, d_values, d_std = t0_ABCD.extract_values(
-        df_freq, pars_list, stds_list)
-
-    # Convert to force using conv.compvolt_to_force function
-    a_values = conv.compvolt_to_force(a_values, FS)
-    a_std = conv.compvolt_to_force(a_std, FS)
-    b_values = conv.compvolt_to_force(b_values, FS)
-    b_std = conv.compvolt_to_force(b_std, FS)
-    c_values = conv.compvolt_to_force(c_values, FS)
-    c_std = conv.compvolt_to_force(c_std, FS)
-    d_values = conv.compvolt_to_force(d_values, FS)
-    d_std = conv.compvolt_to_force(d_std, FS)
-
-    # Now plot
-    plt.figure(dpi=200)
-    plt.errorbar(df_freq, a_values, yerr=a_std, linestyle='None',
-                 marker='.', label='$A_{sin f}$')
-    plt.errorbar(df_freq, b_values, yerr=b_std, linestyle='None',
-                 marker='.', label='$B_{cos f}$')
-    plt.errorbar(df_freq, c_values, yerr=c_std, linestyle='None',
-                 marker='.', label='$C_{sin 2f}$')
-    plt.errorbar(df_freq, d_values, yerr=d_std, linestyle='None',
-                 marker='.', label='$D_{cos 2f}$')
-    plt.xscale('log')
-    plt.title('Force amplitudes as a function of frequency')
-    plt.xlabel('Frequency [Hz]')
+    plt.figure()
+    plt.plot(f_AC, A_ampl, linestyle='-', marker='None', label='$A_{sin}$')
+    plt.plot(f_AC, D_ampl, linestyle='-', marker='None', label='$B_{cos}$')
+    plt.xlabel('Frequency')
     plt.ylabel('Force amplitude coefficients [N]')
-    plt.legend()
-    plt.grid()
+    plt.xscale('log')
     plt.tight_layout()
     plt.ticklabel_format(axis='y', style='sci', scilimits=(-6, -6))
-    plt.savefig('graphs/ABCDplot_force.png')
-    plt.close()
+    plt.legend()
+    plt.grid()
+    plt.show()
 
 
 def generate_plot_A_B(xmean_vec, A_vec, B_vec, is_force=True):

@@ -1,6 +1,5 @@
 import numpy as np
 
-FS = 100 * 10**(-6) # V (this was 100 microvolts)
 dvdf = 1.25 * 10**(-3) #V/N (this was 1.25 millivolts/N)
 
 #conversions
