@@ -46,7 +46,7 @@ w_theo = 2 * np.pi * f_theo
 df = pd.read_csv(
     'final_experiment/data/LM_measurement/V_s_V_r_open.csv', delimiter=';')
 
-df = df.drop(index=range(9)).reset_index(drop=True)
+# df = df.drop(index=range(9)).reset_index(drop=True)
 
 f_data = df['Freq'].to_numpy()
 w_data = 2*np.pi*f_data
@@ -143,7 +143,7 @@ plt.yscale('log')
 plt.legend()
 plt.grid()
 plt.tight_layout()
-plt.savefig('final_experiment/pictures/lm_meas/V_s_V_r_open_2.pdf')
+# plt.savefig('final_experiment/pictures/lm_meas/V_s_V_r_open_2.pdf')
 # plt.show()
 
 
@@ -153,7 +153,7 @@ plt.savefig('final_experiment/pictures/lm_meas/V_s_V_r_open_2.pdf')
 df = pd.read_csv(
     'final_experiment/data/LM_measurement/V_s_short.csv', delimiter=';')
 
-df = df.drop(index=range(4)).reset_index(drop=True)
+# df = df.drop(index=range(4)).reset_index(drop=True)
 
 f_data = df['Freq'].to_numpy()
 w_data = 2*np.pi*f_data
@@ -201,8 +201,7 @@ plt.yscale('log')
 plt.legend()
 plt.grid()
 plt.tight_layout()
-plt.savefig('final_experiment/pictures/lm_meas/V_s_short_2.pdf')
-plt.savefig('final_experiment/pictures/lm_meas/V_s_short_2.png')
+# plt.savefig('final_experiment/pictures/lm_meas/V_s_short_2.pdf')
 # plt.show()
 
 
@@ -212,7 +211,7 @@ plt.savefig('final_experiment/pictures/lm_meas/V_s_short_2.png')
 df = pd.read_csv(
     'final_experiment/data/LM_measurement/V_s_lastra.csv', delimiter=';')
 
-df = df.drop(index=range(4)).reset_index(drop=True)
+# df = df.drop(index=range(4)).reset_index(drop=True)
 
 f_data = df['Freq'].to_numpy()
 w_data = 2*np.pi*f_data
