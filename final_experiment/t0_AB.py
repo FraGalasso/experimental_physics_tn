@@ -23,10 +23,22 @@ def sin_cos_func(x, A, B, f, x0):
     '''Sinusoidal model function.'''
     return A * np.sin(2 * np.pi * f * (x - x0)) + B * np.cos(2 * np.pi * f * (x - x0))
 
+def sin_cos_func_off(x, A, B, C, f, x0):
+    '''Sinusoidal model function, with an offset.'''
+    return A * np.sin(2 * np.pi * f * (x - x0)) + B * np.cos(2 * np.pi * f * (x - x0)) + C
+
 
 def determine_A_B_in_interval(time, channel, t_0, f_MOD):
     '''Determines A and B for a given time interval.'''
     def model(time, A, B): return sin_cos_func(time, A, B, f=f_MOD, x0=t_0)
+    popt, pcov = curve_fit(model, time, channel)
+    A = popt[0]
+    B = popt[1]
+    return A, B
+
+def determine_A_B_in_interval_off(time, channel, t_0, f_MOD):
+    '''Determines A and B for a given time interval. (offset model function)'''
+    def model(time, A, B, C): return sin_cos_func_off(time, A, B, C, f=f_MOD, x0=t_0)
     popt, pcov = curve_fit(model, time, channel)
     A = popt[0]
     B = popt[1]
@@ -169,7 +181,7 @@ def determine_A_B_func_alt(interval_length, time, channel, f_MOD, t_0, plot, is_
         t = group['Time'].values
         y = group['Channel1'].values
         avg_t = np.mean(t)
-        A, B = determine_A_B_in_interval(
+        A, B = determine_A_B_in_interval_off(
             time=t, channel=y, t_0=t_0, f_MOD=f_MOD)
         return pd.Series({'A': A, 'B': B, 'avg_t': avg_t})
 

@@ -72,7 +72,7 @@ def generate_plot_A_B(xmean_vec, A_vec, B_vec, is_force=True):
     # A_mean, A_err = stats(A_vec)
     # B_mean, B_err = stats(B_vec)
     # plt.title('A: %f +/- %f, B: %f +/- %f' % (A_mean, A_err, B_mean, B_err))
-    plt.xlabel('Interval index [s]')
+    plt.xlabel('Interval timestamp [s]')
     if is_force:
         plt.ylabel('Force amplitude coefficients [N]')
         plt.axhline(y=t0_AB.dc_force_estimate(), color='r', linestyle='--',
@@ -105,7 +105,7 @@ def generate_plot_A_B_C_D(freq, xmean_vec, A_vec, B_vec, C_vec, D_vec, is_force=
     #              'C: {:.2e} +/- {:.2e}, D: {:.2e} +/- {:.2e}').format(
     #     A_mean, A_err, B_mean, B_err, C_mean, C_err, D_mean, D_err)
     # plt.suptitle(stats_str)
-    plt.xlabel('Time stamp (s)')
+    plt.xlabel('Interval timestamp (s)')
     if is_force:
         plt.ylabel('Force amplitude coefficients [N]')
         plt.title('Force amplitudes A, B, C, D: ' + str(freq) + ' Hz')
@@ -116,5 +116,6 @@ def generate_plot_A_B_C_D(freq, xmean_vec, A_vec, B_vec, C_vec, D_vec, is_force=
     plt.tight_layout()
     plt.ticklabel_format(axis='y', style='sci', scilimits=(-6, -6))
     plt.grid()
-    # plt.savefig('final_experiment/pictures/lastra/ABCD_' + str(freq) + '.png')
+    plt.savefig('final_experiment/pictures/force/ABCD_' + str(freq) + '.pdf')
+    plt.savefig('final_experiment/pictures/force/ABCD_' + str(freq) + '.png')
     plt.show()
