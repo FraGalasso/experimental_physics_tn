@@ -25,7 +25,7 @@ def Vs_Vgen_short_model(w, L_value, k_value, Rgen_value, Rl_value):
 
 
 R_gen = 50  # Ohm (nominal)
-R_l = 4.51  # Ohm (measured from multimeter)
+R_l = 4.516  # Ohm (measured from multimeter)
 V_gen = 15
 # rigol accuracy is 1% of amplitude value + 1mV
 delta_Vgen = V_gen * 0.01 + 0.001
@@ -34,9 +34,6 @@ delta_Vgen = V_gen * 0.01 + 0.001
 'OPEN CIRCUIT'
 
 # this is not so clean, L and M come from fits below
-L = 0.00439  # mH
-M = 2.1*10**(-3)  # mH
-k = 0.3
 
 f_theo = np.arange(0, 100000, 10)
 w_theo = 2 * np.pi * f_theo
@@ -222,49 +219,10 @@ ampl_Vs_Vgen_data_lastra = V_s_data_lastra / V_gen
 delta_Vs_Vgen_lastra = ampl_Vs_Vgen_data_lastra * \
     np.sqrt((delta_V_s_lastra / V_s_data_lastra)**2 + (delta_Vgen / V_gen)**2)
 
-'''
-'Non linear fit to find k and L from copper sheet data'
-
-
-# A is L, B is k, C is Rl
-def model(x, A, B, C): return Vs_Vgen_short_model(
-    x, L_value=A, k_value=B, Rgen_value=R_gen, Rl_value=C)
-
-
-popt_lastra, pcov_lastra = curve_fit(model, w_data, ampl_Vs_Vgen_data_lastra, p0=[
-    4, 0.5, 4.5], sigma=delta_Vs_Vgen_lastra, absolute_sigma=True)
-
-
-L_lastra = popt_lastra[0]
-delta_L_lastra = np.sqrt(pcov_lastra[0, 0])
-k_lastra = popt_lastra[1]
-delta_k_lastra = np.sqrt(pcov_lastra[1, 1])
-Rl_lastra = popt_lastra[2]
-delta_Rl_lastra = np.sqrt(pcov_lastra[2, 2])
-
-print('Vs/Vgen (copper sheet) fit:')
-print(f'L = {L_lastra} +/- {delta_L_lastra} H')
-print(f'k = {k_lastra} +/- {delta_k_lastra}')
-print(f'Rl = {Rl_lastra} +/- {delta_Rl_lastra} Ohm')
-
-'Model'
-
-factor_1 = 1j*w_theo*L_lastra * \
-    (1 - (1j*w_theo*L_lastra*(k**2) / (1j*w_theo*L_lastra + Rl_lastra)))
-Vs_Vgen_lastra = (Rl_lastra+factor_1)/(R_gen+Rl_lastra+factor_1)
-ampl_Vs_Vgen_lastra = np.abs(Vs_Vgen_lastra)
-
-label_l = f'$L_{{sheet}} = {1000*L_lastra:.2g} \\pm {1000*delta_L_lastra:.1g}$ mH\n'
-label_k = f'$k_{{sheet}} = {k_lastra:.1g} \\pm {k_lastra:.1g}$\n'
-label_rl = f'$R_{{l,sheet}} = {Rl_lastra:.2g} \\pm {delta_Rl_lastra:.1g} \Omega$'
-'''
-
 'Plots'
 plt.figure()
 plt.errorbar(x=f_data, y=ampl_Vs_Vgen_data_lastra, yerr=delta_Vs_Vgen_lastra,
              linestyle='None', marker='.', label='Data: $V_S/V_{gen}$ copper sheet')
-'''plt.plot(f_theo, ampl_Vs_Vgen_lastra, linestyle='-',
-         marker='None', label=label_l+label_k+label_rl)'''
 plt.xlabel('f [Hz]')
 plt.ylabel('$V_S/V_{GEN}$')
 plt.xscale('log')

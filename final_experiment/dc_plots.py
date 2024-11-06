@@ -8,6 +8,8 @@ import conversion as conv
 df = pd.read_csv('final_experiment/data/DCmeasurement/totalDC1.csv')
 fs = 0.0005
 
+print(f'Elapsed time: {df["Time"].iloc[-1]-df["Time"].iloc[0]} s')
+
 time = df['Time']
 force = conv.compvolt_to_force(df['Channel1'], fs)
 force_quad = conv.compvolt_to_force(df['Channel2'], fs)

@@ -1,7 +1,9 @@
 import pandas as pd
+import numpy as np
 import t0_ABCD
 import plot_functions as pltfunc
 import conversion as conv
+import matplotlib.pyplot as plt
 
 
 FS = 1e-4  # V (this was 100 microvolts)
@@ -38,10 +40,36 @@ for item in df_list:
     t0 += 0.3
 
     A_mean, A_std, B_mean, B_std, C_mean, C_std, D_mean, D_std = t0_ABCD.determine_A_B_C_D_func_alt(
-        freq=freqs[i], time=time, channel=ch1, t_0=t0, f_MOD=f_MOD, interval_length=300, plot=False)
+        freq=freqs[i], time=time, channel=ch1, t_0=t0, f_MOD=f_MOD, interval_length=300, plot=True)
     pars_list.append([A_mean, B_mean, C_mean, D_mean])
     stds_list.append([A_std, B_std, C_std, D_std])
     i = i + 1
 
 
 pltfunc.plot_forcegraph(freqs, pars_list, stds_list)
+
+a_values, a_std, b_values, b_std, c_values, c_std, d_values, d_std = t0_ABCD.extract_values(
+    df_freq=0, pars_list=pars_list, stds_list=stds_list)
+
+a_array = np.array(a_values)
+d_array = np.array(d_values)
+a_std_array = np.array(a_std)
+d_std_array = np.array(d_std)
+
+ad_1_4 = d_array/a_array
+delta_ad_1_4 = np.abs(ad_1_4) * np.sqrt((a_std_array/a_array)**2 + (d_std_array/d_array)**2)
+
+print(t0_ABCD.stats(ad_1_4))
+
+plt.figure()
+plt.errorbar(freqs, ad_1_4, yerr=delta_ad_1_4, linestyle='None', marker='.', label='$\\frac{D}{A}$')
+plt.axhline(y=-0.25, color='red', linestyle='-', linewidth=1)
+plt.xscale('log')
+plt.xlabel('Frequency [Hz]')
+plt.ylabel('')
+plt.legend()
+plt.grid()
+plt.tight_layout()
+# plt.ticklabel_format(axis='y', style='sci', scilimits=(-6, -6))
+# plt.savefig('final_experiment/pictures/coolplots/check1_4_coils.pdf')
+plt.show()

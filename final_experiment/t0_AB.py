@@ -38,7 +38,7 @@ def determine_A_B_in_interval(time, channel, t_0, f_MOD):
 
 def determine_A_B_in_interval_off(time, channel, t_0, f_MOD):
     '''Determines A and B for a given time interval. (offset model function)'''
-    def model(time, A, B, C): return sin_cos_func_off(time, A, B, C, f=f_MOD, x0=t_0)
+    def model(time, A, B, C): return sin_cos_func_off(x=time, A=A, B=B, C=C, f=f_MOD, x0=t_0)
     popt, pcov = curve_fit(model, time, channel)
     A = popt[0]
     B = popt[1]
@@ -139,7 +139,7 @@ def determine_A_B_func(interval_length, time, channel, f_MOD, t_0, plot, is_forc
         time_int = time[start_point:end_point]
         channel_int = channel[start_point:end_point]
 
-        A, B = determine_A_B_in_interval(time_int, channel_int, t_0, f_MOD)
+        A, B = determine_A_B_in_interval_off(time_int, channel_int, t_0, f_MOD)
 
         A_vec.append(A)
         B_vec.append(B)
@@ -162,11 +162,16 @@ def dc_force_estimate():
     '''Gives an estimate for the DC force in Newton.'''
     # CONSTANTS
     D_b = 0.235   # m
-    d = 0.0165  # m
+    d = 0.0195  # m
+    delta_d = 0.0001
     N_windings = 84
-    i_r = 0.996  # A
-    i_s = 0.13486  # A
-    return 0.2e-6 * i_r * i_s * (N_windings**2) * np.pi * D_b / d
+    i_r = 0.9977  # A
+    delta_ir = 0.0005
+    i_s = 0.1349  # A
+    delta_is = 0.0002
+    f = 0.2e-6 * i_r * i_s * (N_windings**2) * np.pi * D_b / d
+    delta_f = f*np.sqrt((delta_d/d)**2 + (delta_ir/i_r)**2 + (delta_is/i_s)**2)
+    return f, delta_f
 
 
 def determine_A_B_func_alt(interval_length, time, channel, f_MOD, t_0, plot, is_force=True):
@@ -194,8 +199,13 @@ def determine_A_B_func_alt(interval_length, time, channel, f_MOD, t_0, plot, is_
     # Calculate mean and std devs and print
     A_mean, A_err = stats(A_list)
     B_mean, B_err = stats(B_list)
-    print('A: %f +/- %f' % (A_mean, A_err))
-    print('B: %f +/- %f' % (B_mean, B_err))
+    print('A: %f +/- %f mN' % (A_mean*1000, A_err*1000))
+    print('B: %f +/- %f mN' % (B_mean*1000, B_err*1000))
+    f, df = dc_force_estimate()
+    print('F: %f +/- %f' % (f, df))
+    lam = A_mean / f
+    d_lam = lam * np.sqrt((df/f)**2 + (A_err/A_mean)**2)
+    print('lambda: %f +/- %f' % (lam, d_lam))
 
     # Plot the values
     if plot:

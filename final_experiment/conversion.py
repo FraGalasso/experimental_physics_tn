@@ -1,6 +1,6 @@
 import numpy as np
 
-dvdf = 1.25 * 10**(-3) #V/N (this was 1.25 millivolts/N)
+dvdf = 0.00140484 #V/N (this was 1.25 millivolts/N)
 
 #conversions
 def compvolt_to_realvolt(vec, FS):

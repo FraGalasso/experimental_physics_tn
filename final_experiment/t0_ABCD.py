@@ -18,15 +18,18 @@ def stats(vec):
 
 # AC MEASUREMENT; with offset
 
+def sin_cos_func_off(x, A, B, E, f, x0):
+    '''Sinusoidal model function.'''
+    return A * np.sin(2 * np.pi * f * (x - x0)) + B * np.cos(2 * np.pi * f * (x - x0)) + E
 
-def sin_cos_func_off(x, A, B, C, D, E, f, x0):
+def sin_cos_func_bimod(x, A, B, C, D, E, f, x0):
     '''Bisinusoidal model function.'''
     return A * np.sin(2 * np.pi * f * (x - x0)) + B * np.cos(2 * np.pi * f * (x - x0)) + C * np.sin(2 * np.pi * 2*f * (x - x0)) + D * np.cos(2 * np.pi * 2*f * (x - x0)) + E
 
 
 def determine_A_B_C_D_in_interval_off(time, channel, t_0, f_MOD):
     '''Determine A B C D for a given time interval.'''
-    def model(time, A, B, C, D, E): return sin_cos_func_off(
+    def model(time, A, B, C, D, E): return sin_cos_func_bimod(
         time, A, B, C, D, E, f=f_MOD, x0=t_0)
     popt, pcov = curve_fit(model, time, channel)
     A = popt[0]
@@ -53,8 +56,8 @@ def determine_t0_fmod_function(time, channel3, f_MOD, plot, n_divisions):
         # correct f_MOD from previous step
         f_MOD = f_MOD-delta
 
-        def model(x, A, B, C, D, E): return sin_cos_func_off(
-            x, A, B, C, D, E, f=f_MOD, x0=0)
+        def model(x, A, B, E): return sin_cos_func_off(
+            x, A, B, E, f=f_MOD, x0=0)
 
         # split the  sample in n blocks
         for i in range(n_divisions):
@@ -204,10 +207,11 @@ def determine_A_B_C_D_func_alt(interval_length, time, channel, f_MOD, t_0, plot,
     B_mean, B_err = stats(B_list)
     C_mean, C_err = stats(C_list)
     D_mean, D_err = stats(D_list)
-    print('A: %f +/- %f' % (A_mean, A_err))
-    print('B: %f +/- %f' % (B_mean, B_err))
-    print('C: %f +/- %f' % (C_mean, C_err))
-    print('D: %f +/- %f' % (D_mean, D_err))
+    print(f'Frequency = {freq} Hz')
+    print('A: %f +/- %f microN' % (1e6*A_mean, 1e6*A_err))
+    print('B: %f +/- %f microN' % (1e6*B_mean, 1e6*B_err))
+    print('C: %f +/- %f microN' % (1e6*C_mean, 1e6*C_err))
+    print('D: %f +/- %f microN' % (1e6*D_mean, 1e6*D_err))
 
     # Plot the values
     if plot:
